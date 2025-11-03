@@ -1,7 +1,27 @@
-* xref:module-01.adoc[1. RPM Native Container]
-** xref:module-01.adoc#repositories[Repositories]
-** xref:module-01.adoc#software[Software]
+* xref:index.adoc[Introduction]
 
-* xref:module-02.adoc[2. GitHub Sourced Container]
-** xref:module-02.adoc#prerequisites[Install Prerequisites]
-** xref:module-02.adoc#container[Enable Container]
+* xref:module-01.adoc[1. Foundation: Concepts & Setup]
+** xref:module-01.adoc#welcome[Welcome & Objectives]
+** xref:module-01.adoc#edge_challenge[The Edge Challenge]
+** xref:module-01.adoc#bootc[Intro to bootc]
+** xref:module-01.adoc#workflow[Workflow]
+** xref:module-01.adoc#setup[Environment Setup]
+
+* xref:module-02.adoc[2. Building the Appliance (v1)]
+** xref:module-02.adoc#containerfile[Appliance Containerfile]
+** xref:module-02.adoc#physically_bound[Physically-bound Images]
+** xref:module-02.adoc#build[Build Images]
+
+* xref:module-03.adoc[3. Deploying the Appliance]
+** xref:module-03.adoc#boot_vm[Boot VM]
+** xref:module-03.adoc#manifests[Application Manifests]
+
+* xref:module-04.adoc[4. Performing an Atomic Update (v2)]
+** xref:module-04.adoc#atomic_updates[Atomic Updates]
+** xref:module-04.adoc#build_v2[Build v2]
+** xref:module-04.adoc#upgrade[Upgrade System]
+** xref:module-04.adoc#delta_updates[Delta Updates]
+
+* xref:module-05.adoc[5. Conclusion]
+** xref:module-05.adoc#recap[Recap]
+** xref:module-05.adoc#resources[Resources]

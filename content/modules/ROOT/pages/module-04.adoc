@@ -1,0 +1,47 @@
+= Module 4: Performing an Atomic Update (v2)
+
+[#atomic_updates]
+== 4.1 The Power of Atomic Updates and Rollbacks
+RHEL Image Mode provides an A/B boot model, which allows for atomic updates. When an update is applied, a new bootable image is staged. If the update fails, the system can automatically roll back to the previous known-good state, ensuring reliability.
+
+[#build_v2]
+== 4.2 Hands-On: Build the Updated Image (v2)
+Next, you will build a new version of the appliance (`v2`). This version could contain an updated application, security patches, or OS-level changes.
+
+. Run the build script to create the `v2` image:
++
+[source,sh,role=execute]
+----
+bash -x build.sh v2
+----
+
+[#upgrade]
+== 4.3 Hands-On: Upgrade the Live System
+With the `v2` image built, you can now perform an atomic upgrade on the running VM.
+
+. Execute the `bootc switch` command to stage the `v2` image:
++
+[source,sh,role=execute]
+----
+sudo bootc switch <registry_path>/<image_name>:v2
+----
+
+. Apply the update and reboot the system:
++
+[source,sh,role=execute]
+----
+sudo bootc upgrade --apply
+----
+
+After the reboot, the system will be running the `v2` image. You can verify the update using `sudo bootc status`.
+
+. Verify the greenboot status and logs to ensure the update was successful:
++
+[source,sh,role=execute]
+----
+systemctl status greenboot-healthcheck.service
+----
+
+[#delta_updates]
+== 4.4 Experimental: Delta Updates
+For low-bandwidth environments, transferring full OS images can be challenging. While not officially supported, it is possible to generate smaller delta updates using tools like `tar-diff`. This approach is of interest to strategic partners and demonstrates the flexibility of the image-based model.

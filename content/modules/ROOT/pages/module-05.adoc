@@ -1,0 +1,21 @@
+= Module 5: Conclusion
+
+[#recap]
+== 5.1 Recap of Business Value & Key Takeaways
+This lab has demonstrated the power of RHEL Image Mode for building, deploying, and managing edge appliances. By treating the OS and applications as a single, versioned unit, you can:
+
+* *Accelerate Time-to-Market:* Utilize DevOps/CI/CD practices for the entire system.
+* *Simplify Appliance Creation:* Combine the OS, applications, and drivers into a single artifact.
+* *Streamline Field Operations:* Benefit from smartphone-like reliability with atomic updates and rollbacks.
+* *Enhance Security:* Reduce the attack surface and prevent configuration drift.
+* *Enable Disconnected Deployments:* Ship self-contained appliances for air-gapped environments.
+* *Manage Fleets at Scale:* Use standard container registries to manage OS and application versions.
+
+[#resources]
+== 5.2 Further Resources & Q&A
+For more information, please refer to the official Red Hat documentation.
+
+* [Red Hat Enterprise Linux for Edge](https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux/edge)
+* [Building and managing edge devices with RHEL for Edge](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/building_and_managing_edge_devices_with_rhel_for_edge/index)
+
+Thank you for participating in this lab. We will now open the floor for questions.

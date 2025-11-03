@@ -1,0 +1,48 @@
+= Module 3: Deploying and Verifying the Appliance
+
+[#boot_vm]
+== 3.1 Hands-On: Create and Boot a Test VM
+With the bootable ISO created, you will now create a KVM virtual machine and boot it from the ISO. 
+
+. Create a new VM and boot from the `v1` ISO. 
+
+Once the VM has booted, log in and perform the following checks to verify the system status.
+
+. Check the immutable system status:
++
+[source,sh,role=execute]
+----
+sudo bootc status
+----
+
+. Verify that the WordPress and MySQL pods are running:
++
+[source,sh,role=execute]
+----
+oc get pods -A
+----
+
+. Confirm that the embedded container images are being used:
++
+[source,sh,role=execute]
+----
+sudo crictl images
+----
+
+[#manifests]
+== 3.2 Overview of the WordPress Application Manifests
+The WordPress application is deployed using standard Kubernetes manifests. These files define the deployments, services, and persistent volumes required for the application to run.
+
+. Review the kustomization file to see how the manifests are organized:
++
+[source,sh,role=execute]
+----
+cat manifests/kustomization.yaml
+----
+
+. Inspect the WordPress deployment manifest:
++
+[source,sh,role=execute]
+----
+cat manifests/wordpress.yaml
+----
