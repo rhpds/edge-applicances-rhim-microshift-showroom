@@ -14,9 +14,9 @@ Upon completion of this lab, you will be able to:
 [#edge_challenge]
 == 1.2 The Edge Challenge & The RHEL Image Mode Solution
 Managing edge devices presents several challenges, including:
-* *Configuration Drift:* Systems diverge from their intended state over time.
-* *Risky Updates:* Applying updates in the field can lead to system failures.
-* *Disconnected Environments:* Many edge devices operate in locations with limited or no network connectivity.
+- *Configuration Drift:* Systems diverge from their intended state over time.
+- *Risky Updates:* Applying updates in the field can lead to system failures.
+- *Disconnected Environments:* Many edge devices operate in locations with limited or no network connectivity.
 
 RHEL Image Mode provides a solution to these problems by treating the entire operating system as a single, immutable image.
 

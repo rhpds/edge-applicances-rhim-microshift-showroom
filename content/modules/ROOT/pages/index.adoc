@@ -1,18 +1,60 @@
 = Building Self-contained Appliances with RHEL Image Mode and MicroShift
 
-Welcome to this hands-on lab where you will learn how to build, deploy, and manage self-contained edge appliances using Red Hat Enterprise Linux (RHEL) Image Mode (`bootc`) and MicroShift.
+Welcome to a hands-on lab that will fundamentally change how you build, deliver, and manage your software appliances.
 
-image::redhat-image-mode.png[rhel-logo-black,55%,55%]
+If you're a partner or customer building appliances, you know the challenges: configuration drift, complex update mechanisms, disconnected environments, and the constant pressure to enhance security while accelerating time-to-market.
 
-== Lab Overview
+This lab introduces the solution. You will learn how to use Red Hat Enterprise Linux (RHEL) Image Mode (bootc) and MicroShift to treat your entire appliance—the OS, your applications, and its configuration—as a single, atomic, and version-controlled unit.
 
-In this lab, you will progress through the entire lifecycle of an edge appliance:
+image::redhat-image-mode.jpg[redhat-image-mode,80%,80%]
 
-* **Module 1: Foundation:** Understand the core concepts of RHEL Image Mode and the challenges of edge computing.
-* **Module 2: Build:** Create a bootable appliance image that includes an embedded containerized application.
-* **Module 3: Deploy:** Deploy your appliance to a virtual machine and verify its operation.
-* **Module 4: Update:** Perform an atomic, image-based update to a new version of your appliance.
-* **Module 5: Conclusion:** Recap the key takeaways and business value.
+== Revolutionize Your Appliance Lifecycle
+
+By adopting an image-based approach, you can directly:
+
+* **Accelerate Time-to-Market:** Use standard DevOps/CI/CD practices for the *entire* OS and application stack, dramatically speeding up development and delivery.  
+* **Simplify Appliance Creation:** Combine the OS, drivers, and your applications into a single, manageable unit.  
+* **Streamline Field Operations:** Deliver "smartphone-like" reliability with fully atomic, image-based updates and fast, safe rollbacks.  
+* **Enable Disconnected Deployments:** Ship truly self-contained, "physically-bound" images for air-gapped or offline environments by embedding application containers directly into the OS image.  
+* **Enhance Security:** Radically reduce your appliance's attack surface and eliminate configuration drift with immutable system images.  
+* **Manage Fleets at Scale:** Control OS and application versions consistently using standard container registries and tags.
+
+== What you will learn
+
+Upon completion of this lab, you will be able to:
+
+* **Build** a self-contained appliance using RHEL Image Mode (bootc).
+* **Embed** cloud-native applications (via MicroShift) directly into the bootable OS image for disconnected scenarios.
+* **Generate** a bootable ISO from a container image and deploy it to a KVM virtual machine.
+* **Perform** an atomic, image-based system upgrade and rollback on a live, running appliance.
+
+== Lab modules
+
+* xref:module-01.adoc[1. Foundation: Concepts & Setup]
+** xref:module-01.adoc#welcome[Welcome & Objectives]
+** xref:module-01.adoc#edge_challenge[The Edge Challenge]
+** xref:module-01.adoc#bootc[Intro to bootc]
+** xref:module-01.adoc#workflow[Workflow]
+** xref:module-01.adoc#setup[Environment Setup]
+
+* xref:module-02.adoc[2. Building the Appliance (v1)]
+** xref:module-02.adoc#containerfile[Appliance Containerfile]
+** xref:module-02.adoc#physically_bound[Physically-bound Images]
+** xref:module-02.adoc#build[Build Images]
+
+* xref:module-03.adoc[3. Deploying the Appliance]
+** xref:module-03.adoc#boot_vm[Boot VM]
+** xref:module-03.adoc#manifests[Application Manifests]
+
+* xref:module-04.adoc[4. Performing an Atomic Update (v2)]
+** xref:module-04.adoc#atomic_updates[Atomic Updates]
+** xref:module-04.adoc#build_v2[Build v2]
+** xref:module-04.adoc#upgrade[Upgrade System]
+** xref:module-04.adoc#delta_updates[Delta Updates]
+
+* xref:module-05.adoc[5. Conclusion]
+** xref:module-05.adoc#recap[Recap]
+** xref:module-05.adoc#resources[Resources]
 
 == Lab Access
 
