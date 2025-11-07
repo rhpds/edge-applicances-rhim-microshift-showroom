@@ -19,7 +19,7 @@ By adopting an image-based approach, you can directly:
 * **Enhance Security:** Radically reduce your appliance's attack surface and eliminate configuration drift with immutable system images.  
 * **Manage Fleets at Scale:** Control OS and application versions consistently using standard container registries and tags.
 
-image::disconnected.png[disconnected-workflow,100%,100%]
+image::disconnected.jpg[disconnected-workflow,100%,100%]
 
 == What you will learn
 
