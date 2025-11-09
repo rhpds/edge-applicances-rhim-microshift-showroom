@@ -2,48 +2,61 @@
 
 [#welcome]
 == 1.1 Welcome & Lab Objectives
-Welcome to the hands-on lab for building and managing edge appliances. The primary goal of this lab is to demonstrate how to build a self-contained appliance using RHEL Image Mode (bootc) and deploy cloud-native applications with MicroShift.
+Welcome to the hands-on lab for building and managing edge appliances. In this session, you will explore how RHEL Image Mode (bootc) and MicroShift simplify delivering consistent, reliable, and fully self-contained edge systems.
 
-Upon completion of this lab, you will be able to:
+By the end of this module, you will be able to:
 * Build a self-contained appliance using RHEL Image Mode (bootc).
-* Deploy Cloud Native Applications with MicroShift.
-* Embed application containers directly into the bootable OS image for disconnected scenarios.
+* Deploy cloud-native applications with MicroShift.
+* Embed application containers directly into a bootable OS image for disconnected environments.
 * Generate a bootable ISO from a container image and deploy it on a KVM virtual machine.
-* Perform atomic, image-based system upgrades on a live system.
+* Perform atomic, image-based system upgrades and rollbacks.
+
+[NOTE]
+The entire lab environment is already prepared for you. Your build host has the required tools installed, MicroShift bundles are available, and the sample application content is included in the lab repository.
 
 [#edge_challenge]
 == 1.2 The Edge Challenge & The RHEL Image Mode Solution
-Managing edge devices presents several challenges, including:
-- *Configuration Drift:* Systems diverge from their intended state over time.
-- *Risky Updates:* Applying updates in the field can lead to system failures.
-- *Disconnected Environments:* Many edge devices operate in locations with limited or no network connectivity.
+Edge systems often run in tough, inconsistent environments. Common challenges include:
+* *Configuration Drift:* Systems slowly diverge from their intended state.
+* *Risky Updates:* Traditional update methods can break systems in the field.
+* *Disconnected Locations:* Many devices have intermittent or no network connectivity.
 
-RHEL Image Mode provides a solution to these problems by treating the entire operating system as a single, immutable image.
+**RHEL Image Mode** addresses these challenges by treating the *entire* OS as an immutable, versioned image. Instead of updating individual packages, you deploy a new OS image exactly like updating a container.
 
 [#bootc]
 == 1.3 Introducing RHEL Image Mode (bootc)
-RHEL Image Mode, powered by `bootc`, represents a shift from traditional "Package Mode" to a modern "Image Mode." Instead of managing individual packages, you manage the entire OS as a versioned, bootable container image.
+RHEL Image Mode, backed by **bootc**, replaces traditional package-based management with an “image-first” workflow.
 
-Key benefits include:
-* *Speed:* Rapidly deploy and update systems.
-* *Reliability:* Atomic updates and rollbacks ensure system stability.
-* *Security:* Reduced attack surface and protection against configuration drift.
-* *Simplicity:* Simplified appliance creation and management.
+Key benefits:
+* **Atomic updates:** The whole system updates in one operation.
+* **Rollback safety:** A previous working version is always available.
+* **Consistency:** Every device boots from the same known-good image.
+* **Simplicity:** Build, ship, and manage appliances like container images.
+
+This model is ideal for appliances, remote edge clusters, industrial gateways, and environments where reliability outweighs customization.
 
 [#workflow]
-== 1.4 The Build-Deploy-Manage Workflow & Use Cases
-The workflow for RHEL Image Mode is straightforward:
-. Create a `Containerfile` that defines your OS and application layers.
-. Build the `Containerfile` into a bootable container image.
-. Push the image to a container registry.
-. Deploy the image to your edge devices.
-. Manage updates by pulling new image versions.
+== 1.4 The Build-Deploy-Manage Workflow
+A typical Image Mode workflow looks like this:
 
-This model is ideal for edge appliances, IoT devices, and any scenario requiring robust, remotely managed systems.
+. Define your OS + application layers inside a `Containerfile`.
+. Build a bootable container image from that specification.
+. Generate an ISO or disk image from the container image.
+. Deploy the image to target edge systems or VMs.
+. Manage updates by shipping new container image versions.
+
+[NOTE]
+In this lab, the application (WordPress + MySQL) and MicroShift components are already provided. You will see how they can all be included directly inside the OS image.
 
 [#setup]
 == 1.5 Hands-On: Environment Setup
-To begin, you will clone the lab repository which contains all the necessary files.
+Your environment includes:
+* A **build host** (where you run all commands).
+* A **prepared folder structure** with `Containerfile` examples and helper scripts.
+* A **sample workload** (WordPress) ready to be deployed on MicroShift.
+* A **target VM** that will be created later to boot your generated appliance image.
+
+To begin, clone the lab repository that contains all the files you will work with:
 
 . Clone the lab repository:
 +
@@ -51,10 +64,17 @@ To begin, you will clone the lab repository which contains all the necessary fil
 ----
 git clone https://github.com/redhat-gpte-devops-enablement/bootc-embedded-containers.git
 ----
-+
+
 . Change into the repository directory:
 +
 [source,sh,role=execute]
 ----
 cd bootc-embedded-containers
 ----
+
+[NOTE]
+No additional configuration is required. All needed tools, container runtime settings, and supporting files are already present in the lab environment.
+
+---
+
+Next: proceed to xref:module-02.adoc[Module 2: Building the Base Image].
