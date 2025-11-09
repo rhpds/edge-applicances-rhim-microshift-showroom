@@ -1,4 +1,4 @@
-= Module 2: Building the Self-Contained Appliance (v1)
+= Module 2: Building the Self-Contained Appliance 
 
 [#containerfile]
 == 2.1 Anatomy of a bootc Appliance Containerfile
