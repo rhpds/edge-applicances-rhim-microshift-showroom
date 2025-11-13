@@ -20,8 +20,6 @@ image::lab-diagram.png[]
 
 Although we do have a registry in this lab, we do also intend to simulate a disconnected deployment, where the ISO is used for installing the appliance and must be self-contained. Later in the lab, we will also attempt a disconnected update as well. 
 
-image::disconnected.jpg[disconnected-workflow,100%,100%]
-
 *Target host*: A KVM based virtual machine will be created during an exercise to serve as an install location for the image mode system. Any cloud, virtual, or bare metal machine can be used in practice. This lab won't go into detail on local management of KVM, but will use virt-install and virsh to manage the local VM.
 
 
@@ -63,12 +61,22 @@ Edge systems often run in tough, inconsistent environments. Common operational c
 [#bootc]
 == 1.3 Introducing RHEL Image Mode (bootc)
 
-RHEL Image Mode addresses these challenges by treating the *entire* OS as an immutable, versioned image. Instead of updating individual packages, you deploy a new OS image exactly like updating a container. This approach provides:
+RHEL Image Mode, backed by **bootc**, addresses the operational challenges and constraints discussed above by treating the *entire* OS as an immutable, versioned image. Instead of updating individual packages, you deploy a new OS image exactly like updating a container. This approach provides:
 
 * **Consistency:** Every device boots from the same known-good image, eliminating configuration drift
+
+image::manage-fleet.jpg[manage-fleet.jpg,100%,100%]
+
 * **Reliability:** Atomic updates with rollback capability reduce the risk of field failures
+
+image::updates.jpg[updates-workflow,100%,100%]
+
 * **Simplicity:** Build, ship, and manage appliances like container images, enabling standard DevOps/CI/CD practices
-* **Disconnected Operation:** Self-contained images can operate in air-gapped or intermittently connected environments
+
+* **Disconnected Operation:** Self-contained, "physically-bound" images can operate in air-gapped or intermittently connected environments
+
+image::disconnected.jpg[disconnected-workflow,100%,100%]
+
 * **Resource Efficiency:** Optimized for minimal resource footprints, suitable for the smallest edge devices
 
 This image-based model is ideal for edge appliances, remote edge clusters, industrial gateways, and any environment where reliability and consistency outweigh customization flexibility.
@@ -85,9 +93,8 @@ A typical Image Mode workflow looks like this:
 . Manage updates by shipping new container image versions.
 
 image::redhat-image-mode.jpg[redhat-image-mode,100%,100%]
-
 [NOTE]
-In this lab, the application (WordPress + MySQL) and MicroShift components are already provided. You will see how they can all be included directly inside the OS image.
+In this lab, the application (WordPress + MySQL, based on link:https://kubernetes.io/docs/tutorials/stateful-application/mysql-wordpress-persistent-volume[upstream Kubernetes tutorials]) and MicroShift components are already provided. You will see how they can all be included directly inside the OS image.
 
 [#hands-on1]
 == 1.5 Hands-On: Helper files

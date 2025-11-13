@@ -11,7 +11,7 @@ A `Containerfile` is the recipe for your appliance. It defines:
 * MicroShift components
 * Tools the appliance needs
 
-Let’s take a quick look at the file used to build our base image.
+Let’s take a quick look at the file used to build our base image, which is inspired by downstream MicroShift link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.19/html/installing_with_image_mode_for_rhel/installing-a-bootc-image-and-publishing-to-a-registry#microshift-install-bootc-build-image_microshift-install-bootc-image[documentation].
 
 . View the `Containerfile` for the base image:
 +

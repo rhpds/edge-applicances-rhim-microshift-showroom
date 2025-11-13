@@ -16,15 +16,19 @@ If you build or manage software appliances—especially for edge or disconnected
 
 image::challenges.jpg[challenges,100%,100%]
 
-RHEL Image Mode directly addresses these OS-level challenges for edge appliances:
+== How RHEL Image Mode Transforms Edge Appliances
 
-- **Image-based updates**: Provide increased reliability over the life of the system.
+RHEL Image Mode addresses OS-level challenges for edge appliances by treating the entire OS as an immutable, versioned image. By treating your entire appliance as a bootable container image, you can fundamentally change your development and operations:
 
-- **Rollbacks**: The A/B boot model means fast recoveries in the case of unforeseen issues.
+=== Technical Capabilities
 
-- **Updates at scale**: Control OS and application container versioning through industry-standard registries and tags.
+* **Immutable, Versioned Images:** The entire OS is versioned and deployed as a single unit, eliminating configuration drift and ensuring consistency across all devices.
 
-- **Support for air-gapped and DIL environments**: Enables reliable operations even when registries are unavailable, allowing for updates via file or ISO-based methods.
+* **Atomic Updates with Rollbacks:** System updates occur as complete image replacements using an A/B boot model, providing fast recoveries in case of unforeseen issues and increased reliability over the life of the system.
+
+* **Registry-Based Management:** Control OS and application container versioning through industry-standard registries and tags, enabling updates at scale.
+
+* **Multiple Deployment Methods:** Supports connected, air-gapped, and ISO-based deployments, enabling reliable operations even when registries are unavailable.
 
 These OS-level solutions are excellent, but they become even more complex when your goal is to run cloud-native applications. How do you provide a consistent Kubernetes experience for teams, but on hardware that is space-constrained, low-power, or offline?
 
@@ -32,28 +36,19 @@ This is where link:https://www.redhat.com/en/topics/edge-computing/microshift[Re
 
 This lab leverage what we learned about Image Mode through link:https://rhpds.github.io/showroom-lb1054-rhel-image-mode/modules/index.html[LB1054 - Unleashing The Power of Image Mode for RHEL], and moves beyond with focus for **Edge Appliances**. You will learn how to build a true, self-contained appliance by embedding Red Hat build of MicroShift and your applications directly into the OS image—using "physically-bound images" to create an appliance ready **for disconnected edge deployments**.
 
-== Revolutionize Your Appliance Lifecycle
-
-By treating your entire appliance as a bootable container image, you can fundamentally change your development and operations:
+=== Business Value
 
 * **Accelerate Time-to-Market:** Use standard DevOps/CI/CD practices for the *entire* OS and application stack, dramatically speeding up development and delivery.
-* **Simplify Appliance Creation:** Combine the OS, drivers, and your applications into a single, manageable unit.  
 
-image::redhat-image-mode.jpg[redhat-image-mode,100%,100%]
+* **Simplify Appliance Creation:** Combine the OS, drivers, and your applications into a single, manageable unit.
 
-* **Streamline Field Operations:** Deliver "smartphone-like" reliability with fully atomic, image-based updates and fast, safe rollbacks.
+* **Streamline Field Operations:** Deliver "smartphone-like" reliability with fast, safe rollbacks and predictable system behavior.
 
-image::updates.jpg[updates,100%,100%]
+* **Enable Disconnected Deployments:** Ship truly self-contained, "physically-bound" images for air-gapped or offline environments by embedding application containers directly into the OS image.
 
-* **Enable Disconnected Deployments:** Ship truly self-contained, "physically-bound" images for air-gapped or offline environments by embedding application containers directly into the OS image.  
+* **Enhance Security:** Radically reduce your appliance's attack surface and eliminate configuration drift with immutable system images.
 
-image::disconnected.jpg[disconnected-workflow,100%,100%]
-
-* **Enhance Security:** Radically reduce your appliance's attack surface and eliminate configuration drift with immutable system images.  
 * **Manage Fleets at Scale:** Control OS and application versions consistently using standard container registries and tags.
-
-image::manage-fleet.jpg[manage-fleet.jpg,100%,100%]
-
 
 == What you will learn
 
