@@ -117,10 +117,10 @@ ls -la
 
 You should see the following files and directories:
 
-* `Containerfile.base`, `Containerfile.v1`, `Containerfile.v2`, `Containerfile.v3` - Containerfile definitions for building different versions
+* `Containerfile.base`, `Containerfile.v1`, `Containerfile.v2` - Containerfile definitions for building different versions
 * `build-base.sh`, `build.sh` - Build scripts for creating images
 * `embed_image.sh`, `copy_embedded_images.sh` - Helper scripts for embedding container images
-* `create-ks.sh`, `create-network.sh`, `create-vm.sh` - Scripts for VM creation
+* `create-network.sh`, `create-vm.sh`, `add-external-nic.sh`, `remove-external-nic.sh` - Scripts for VM creation
 * `wordpress/` - Directory containing WordPress application manifests
 * `delta-updates-experimental.md` - Documentation on experimental delta updates
 

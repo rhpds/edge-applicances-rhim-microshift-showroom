@@ -7,6 +7,7 @@
 [#containerfile]
 == 2.1 Anatomy of a bootc Appliance Containerfile
 A `Containerfile` is the recipe for your appliance. It defines:
+
 * The base OS (RHEL)
 * MicroShift components
 * Tools the appliance needs
@@ -26,14 +27,14 @@ cat Containerfile.base
 [source,dockerfile]
 ----
 FROM registry.redhat.io/rhel9-eus/rhel-9.6-bootc:9.6
-#FROM registry.distributed-ci.io/rhel9/rhel-bootc:9.6-1745774951
-ARG USHIFT_VER=4.19
+ARG VERSION_ID="9.6"
 
-RUN . /etc/os-release && dnf upgrade -y --releasever="${VERSION_ID}" && \
-    dnf config-manager \
-        --set-enabled "rhocp-${USHIFT_VER}-for-rhel-9-$(uname -m)-rpms" \
-        --set-enabled "fast-datapath-for-rhel-9-$(uname -m)-rpms" && \
-    dnf install -y firewalld jq microshift microshift-release-info cockpit openscap-utils scap-security-guide && \
+## Needed as bootc-image-builder requires a repo file to be present in the base image.
+ADD redhat.repo /etc/yum.repos.d/redhat.repo
+# workaround for this lab, as we didn't managed to push signatures for lvm operator and ubi images from registry.redhat.io 
+ADD policy.json /etc/containers/policy.json
+
+RUN dnf install -y --releasever="${VERSION_ID}" firewalld jq microshift microshift-release-info cockpit openscap-utils scap-security-guide && \
     systemctl enable microshift && \
     dnf clean all
 
@@ -76,6 +77,7 @@ RUN systemctl enable microshift-make-rshared.service
 
 COPY wordpress /usr/lib/microshift/manifests.d/wordpress
 
+## Apply kernel tuning for CIS hardening compliance
 RUN cat > /etc/sysctl.d/99-cis-hardening.conf <<'EOF'
 # IPv6 Settings
 net.ipv6.conf.all.accept_ra = 0
@@ -95,8 +97,6 @@ EOF
 RUN echo "AllowUsers redhat" >> /etc/ssh/sshd_config
 # Run scan and hardening
 RUN oscap-im --profile xccdf_org.ssgproject.content_profile_cis /usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml
-# Run eval to check final result
-#RUN oscap xccdf eval --profile xccdf_org.ssgproject.content_profile_cis /usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml || test $? = 2
 ----
 ====
 
@@ -112,6 +112,7 @@ You don’t need to modify this file during the lab — this is just to understa
 A physically-bound image contains everything the appliance needs to run — **including the application container images**.
 
 This allows the system to:
+
 * Boot and run apps with **no internet connection**
 * Start MicroShift with pre-embedded containers
 * Run workloads immediately after boot
@@ -135,7 +136,6 @@ FROM localhost/microshift-4.19-bootc:latest
 
 ARG USHIFT_BASE_IMAGE_NAME
 ARG USHIFT_BASE_IMAGE_TAG
-#FROM $USHIFT_BASE_IMAGE_NAME:$USHIFT_BASE_IMAGE_TAG
 
 ENV IMAGE_STORAGE_DIR=/usr/lib/containers/storage
 ENV IMAGE_LIST_FILE=${IMAGE_STORAGE_DIR}/image-list.txt
@@ -200,21 +200,36 @@ cat build-base.sh
 .Build script: `build-base.sh` (output of `cat build-base.sh`)
 [source,bash]
 ----
-PULL_SECRET=.pull-secret.json
+#!/bin/bash
 USER_PASSWD=redhat02
 IMAGE_NAME=microshift-4.19-bootc
 
-podman build --authfile "${PULL_SECRET}" -t "${IMAGE_NAME}" \
-    --build-arg USER_PASSWD="${USER_PASSWD}" \
+dnf config-manager \
+        --set-enabled rhocp-4.19-for-rhel-9-$(uname -m)-rpms \
+        --set-enabled fast-datapath-for-rhel-9-$(uname -m)-rpms
+dnf config-manager --set-disabled rhocp-4.18-for-rhel-9-$(uname -m)-rpms --set-disabled rhocp-4.20-for-rhel-9-$(uname -m)-rpms
+cp /etc/yum.repos.d/redhat.repo /home/lab-user/bootc-embeeded-containers
+cp /etc/containers/policy.json /home/lab-user/bootc-embeeded-containers
+# Run podman build as root to allow for :z relabeling
+#
+# Mount the host subscription data
+#
+# In this lab there is no need for --authfile / pullsecret as we are pulling from a disconnected unsecure registry
+sudo podman build -t ${IMAGE_NAME} \
+    --build-arg USER_PASSWD=${USER_PASSWD} \
+    --volume /etc/rhsm:/etc/rhsm:ro,z \
+    --volume /etc/pki/entitlement:/etc/pki/entitlement:ro,z \
+    --volume /etc/yum.repos.d:/etc/yum.repos.d:ro,z \
     -f Containerfile.base
+
 ----
 ====
 
-. Build the base image:
+. Build the base image (~5 minutes):
 +
 [source,sh,role=execute]
 ----
-bash -x build-base.sh
+time sudo bash -x build-base.sh 2>&1 | tee build-base.log
 ----
 
 . (Optional) View the build script for `v1`:
@@ -232,8 +247,6 @@ cat build.sh
 #!/bin/bash
 set -e
 
-PULL_SECRET=.pull-secret.json
-IMAGE_NAME=microshift-4.19-bootc-embeeded
 REGISTRY_URL=quay.io
 TAG=$1
 
@@ -243,36 +256,68 @@ if [ -z "$TAG" ]; then
     exit 1
 fi
 
-REGISTRY_IMG="rhn_support_arolivei/${IMAGE_NAME}"
-BASE_IMAGE_NAME=microshift-4.19-bootc:v2
+# Set IMAGE_NAME and BASE_IMAGE_NAME based on TAG (case-insensitive)
+TAG_LOWER=$(echo "$TAG" | tr '[:upper:]' '[:lower:]')
+case "$TAG_LOWER" in
+    v1)
+        IMAGE_NAME=microshift-4.19-bootc-embeeded
+        BASE_IMAGE_NAME=microshift-4.19-bootc:${TAG}
+        ;;
+    v2)
+        IMAGE_NAME=microshift-4.20-bootc-embeeded
+        BASE_IMAGE_NAME=microshift-4.20-bootc:${TAG}
+        ;;
+    *)
+        echo "Error: TAG must be either v1/V1 or v2/V2"
+        exit 1
+        ;;
+esac
+
+#REGISTRY_IMG="rhn_support_arolivei/${IMAGE_NAME}"
+
+# For v2, configure dnf repositories
+if [ "$TAG_LOWER" = "v2" ]; then
+    echo "#### Configuring dnf repositories for v2"
+    sudo dnf config-manager \
+        --set-enabled rhocp-4.20-for-rhel-9-$(uname -m)-rpms \
+        --set-enabled fast-datapath-for-rhel-9-$(uname -m)-rpms
+    sudo dnf config-manager \
+        --set-disabled rhocp-4.18-for-rhel-9-$(uname -m)-rpms \
+        --set-disabled rhocp-4.19-for-rhel-9-$(uname -m)-rpms
+    cp /etc/yum.repos.d/redhat.repo /home/lab-user/bootc-embeeded-containers
+fi
 
 echo "#### Building a new bootc image with MicroShift and application Container images embeeded to it"
-podman build --authfile "${PULL_SECRET}" -t "${IMAGE_NAME}:${TAG}" \
-    --secret "id=pullsecret,src=${PULL_SECRET}" \
+sudo podman build -t "${IMAGE_NAME}:${TAG}" \
+    --volume /etc/rhsm:/etc/rhsm:ro,z \
+    --volume /etc/pki/entitlement:/etc/pki/entitlement:ro,z \
+    --volume /etc/yum.repos.d:/etc/yum.repos.d:ro,z \
+    --volume /etc/containers/registries.conf.d/99-mirrors.conf:/etc/containers/registries.conf.d/99-mirrors.conf:ro,z \
+    --volume /etc/containers/policy.json:/etc/containers/policy.json:ro,z \
     --build-arg USHIFT_BASE_IMAGE_NAME="${BASE_IMAGE_NAME}" \
     --build-arg USHIFT_BASE_IMAGE_TAG=${TAG} \
     -f Containerfile.${TAG}
 
-echo "#### pushing bootc image to a registry"
-podman push "localhost/${IMAGE_NAME}:${TAG}" "${REGISTRY_URL}/${REGISTRY_IMG}:${TAG}"
+#echo "#### pushing bootc image to a registry"
+#podman push "localhost/${IMAGE_NAME}:${TAG}" "${REGISTRY_URL}/${REGISTRY_IMG}:${TAG}"
 
+sudo mkdir -p /var/tmp/bootc-images
 echo "#### creating ISO from bootc image"
-podman run --authfile "${PULL_SECRET}" --rm -it --privileged \
-    --security-opt label=type:unconfined_t \
-    -v /var/lib/containers/storage:/var/lib/containers/storage \
-    -v ./output:/output \
+sudo podman run --rm -it --privileged --security-opt label=type:unconfined_t \
+   -v /var/lib/containers/storage:/var/lib/containers/storage \
+   -v /var/tmp/bootc-images:/output \
+   --volume /etc/rhsm:/etc/rhsm:ro \
+   --volume /etc/pki/entitlement:/etc/pki/entitlement:ro \
     registry.redhat.io/rhel9/bootc-image-builder:latest \
-    --local \
-    --type iso \
-    "localhost/${IMAGE_NAME}:${TAG}"
+    --progress=verbose --local --type iso localhost/${IMAGE_NAME}:${TAG}
 ----
 ====
 
-. Build the v1 appliance image (this produces the bootable ISO):
+. Build the v1 appliance image (this produces the bootable ISO in around 10 to 15 minutes):
 +
 [source,sh,role=execute]
 ----
-bash -x build.sh v1
+time sudo bash -x build.sh v1 2>&1 | tee build-v1.log
 ----
 
 When the build completes, the ISO will appear in the `_build/` directory.

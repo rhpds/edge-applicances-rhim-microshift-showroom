@@ -10,61 +10,147 @@ Now that your ISO is built, it’s time to launch the appliance inside a virtual
 
 In this environment, VM creation is automated using two helper scripts:
 
-* **create-ks.sh** – generates the Kickstart file used for automated installation  
+* **setup-isolated-network.sh** – create a new Virtual Network under KVM.  
 * **create-vm.sh** – creates the KVM virtual machine and attaches the ISO  
 
 Let’s walk through both so you understand what’s happening behind the scenes.
 
-=== View the Kickstart generator (`create-ks.sh`)
-This script prepares the Kickstart config that defines the automated installation process for the VM.
+=== View the Create Network script(`setup-isolated-network.sh`)
+With the intention of simulate a disconnected environment, this script creates a new Virtual Network under KVM which is isolated from external networks without internet access (i.e.)
 
-. View the Kickstart creation script:
+. View the Create Network script:
 +
 [source,sh,role=execute]
 ----
-cat create-ks.sh
+cat setup-isolated-network.sh
 ----
 +
 [%collapsible]
 ====
-.Output of `create-ks.sh`
+.Output of `setup-isolated-network.sh`
 [source,bash]
 ----
 #!/bin/bash
-cat <<EOF > kickstart.ks
-text
-zerombr
-clearpart --all --initlabel
-ignoredisk --only-use=vda
-autopart --type=plain --nohome
-reboot
+#
+# Script to create an isolated KVM network (no internet access)
+# and optionally attach a VM to it
+#
 
-# Set root password
-rootpw --plaintext redhat
+set -e
 
-# Set timezone
-timezone UTC --isUtc
+# Configuration
+NETWORK_NAME="bootc-isolated"
+BRIDGE_NAME="virbr-bootc"
+NETWORK_IP="192.168.100.1"
+NETWORK_NETMASK="255.255.255.0"
+NETWORK_RANGE_START="192.168.100.2"
+NETWORK_RANGE_END="192.168.100.254"
+NETWORK_XML="/tmp/${NETWORK_NAME}.xml"
 
-# Use the installation source inside the ISO
-cdrom
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
 
-# Do not run the first-boot setup
-firstboot --disable
+# Function to print colored output
+print_info() {
+    echo -e "${GREEN}[INFO]${NC} $1"
+}
 
-%post
-echo "Kickstart installation completed"
-%end
+print_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Check if running as root or with sudo
+if [ "$EUID" -ne 0 ]; then 
+    print_error "Please run as root or with sudo"
+    exit 1
+fi
+
+# Check if network already exists (defined or active)
+if virsh net-info "${NETWORK_NAME}" &>/dev/null || virsh net-list --all --name | grep -q "^${NETWORK_NAME}$"; then
+    print_warn "Network '${NETWORK_NAME}' already exists"
+    read -p "Do you want to destroy and recreate it? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        print_info "Destroying existing network..."
+        # Try to destroy if active
+        if virsh net-destroy "${NETWORK_NAME}" &>/dev/null; then
+            print_info "Network destroyed"
+        fi
+        # Undefine the network
+        if virsh net-undefine "${NETWORK_NAME}" &>/dev/null; then
+            print_info "Network undefined"
+        fi
+    else
+        print_info "Exiting without changes"
+        exit 0
+    fi
+fi
+
+# Create network XML file
+print_info "Creating isolated network XML definition..."
+cat > "${NETWORK_XML}" <<EOF
+<network>
+  <name>${NETWORK_NAME}</name>
+  <uuid>$(uuidgen)</uuid>
+  <forward mode='none'/>
+  <bridge name='${BRIDGE_NAME}' stp='on' delay='0'/>
+  <ip address='${NETWORK_IP}' netmask='${NETWORK_NETMASK}'>
+    <dhcp>
+      <range start='${NETWORK_RANGE_START}' end='${NETWORK_RANGE_END}'/>
+    </dhcp>
+  </ip>
+</network>
 EOF
+
+print_info "Network XML created at ${NETWORK_XML}"
+
+# Define the network
+print_info "Defining network '${NETWORK_NAME}'..."
+virsh net-define "${NETWORK_XML}"
+
+# Start the network
+print_info "Starting network '${NETWORK_NAME}'..."
+virsh net-start "${NETWORK_NAME}"
+
+# Set network to autostart
+print_info "Setting network '${NETWORK_NAME}' to autostart..."
+virsh net-autostart "${NETWORK_NAME}"
+
+# Verify network is active
+if virsh net-info "${NETWORK_NAME}" | grep -q "Active:.*yes"; then
+    print_info "Network '${NETWORK_NAME}' is now active and isolated (no internet access)"
+    print_info "Network details:"
+    virsh net-info "${NETWORK_NAME}"
+    echo
+    print_info "Network IP range: ${NETWORK_RANGE_START} - ${NETWORK_RANGE_END}"
+    print_info "Gateway/DNS: ${NETWORK_IP}"
+else
+    print_error "Failed to start network"
+    exit 1
+fi
+
+# Clean up temporary XML file
+rm -f "${NETWORK_XML}"
+
+print_info "Isolated network setup complete!"
+print_info "To use this network in create-vm.sh, set NETNAME='${NETWORK_NAME}'"
 ----
 ====
+
+=== View the VM creation script (`create-vm.sh`)
+This script uses KVM + virt-install to spin up a VM using the ISO you generated. It does includes the Kickstart generation, which automates the installation. 
 
 [NOTE]
 ====
 Kickstart automates the OS installation so the VM can boot straight into your Image Mode appliance with zero manual clicks.
 ====
-
-=== View the VM creation script (`create-vm.sh`)
-This script uses KVM + virt-install to spin up a VM using the ISO you generated.
 
 . View the VM creation script:
 +
@@ -78,25 +164,96 @@ cat create-vm.sh
 .Output of `create-vm.sh`
 [source,bash]
 ----
-#!/bin/bash
-
-ISO="_build/microshift-v1.iso"
-VM_NAME="microshift-bootc"
+VMNAME=microshift-4.19-bootc-vm1
+NETNAME=bootc-isolated
+ISO_FILE="microshift-4.19-bootc-embeeded-v1.iso"
+LIBVIRT_IMAGES_DIR="/var/lib/libvirt/images"
 KS_FILE="kickstart.ks"
 
-qemu-img create -f qcow2 ${VM_NAME}.qcow2 40G
+# Get the directory where the script is located or use current directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOURCE_ISO="${SCRIPT_DIR}/${ISO_FILE}"
+TARGET_ISO="${LIBVIRT_IMAGES_DIR}/${ISO_FILE}"
+SOURCE_KS="${SCRIPT_DIR}/${KS_FILE}"
 
-virt-install \
-    --name ${VM_NAME} \
-    --ram 4096 \
-    --vcpus 2 \
-    --disk path=${VM_NAME}.qcow2,size=40 \
-    --cdrom ${ISO} \
-    --os-variant rhel9.3 \
-    --network network=default \
-    --graphics none \
-    --initrd-inject=${KS_FILE} \
-    --extra-args="inst.ks=file:/kickstart.ks console=ttyS0"
+# Check if source ISO file exists
+if [ ! -f "${SOURCE_ISO}" ]; then
+    echo "Error: ISO file not found at ${SOURCE_ISO}"
+    echo "Please ensure the ISO file exists or update ISO_FILE variable"
+    exit 1
+fi
+
+# Check if running as root or with sudo
+if [ "$EUID" -ne 0 ]; then 
+    echo "Error: Please run as root or with sudo"
+    exit 1
+fi
+
+# Ensure libvirt images directory exists
+mkdir -p "${LIBVIRT_IMAGES_DIR}"
+
+# Copy ISO to libvirt images directory if it doesn't exist or is different
+if [ ! -f "${TARGET_ISO}" ] || [ "${SOURCE_ISO}" -nt "${TARGET_ISO}" ]; then
+    echo "Copying ISO to ${TARGET_ISO} (this may take a while for large files)..."
+    cp "${SOURCE_ISO}" "${TARGET_ISO}"
+    chmod 644 "${TARGET_ISO}"
+    echo "ISO copied successfully"
+else
+    echo "ISO already exists at ${TARGET_ISO}, skipping copy"
+fi
+
+# Create kickstart file with LVM partitioning
+echo "Creating kickstart file with LVM partitioning..."
+cat > "${SOURCE_KS}" <<'EOFKS'
+lang en_US.UTF-8
+keyboard us
+timezone UTC
+text
+reboot
+
+# Partition the disk with hardware-specific boot and swap partitions, adding an
+# LVM volume that contains a 10GB+ system root. The remainder of the volume will
+# be used by the CSI driver for storing data.
+zerombr
+clearpart --all --initlabel
+# Create boot and swap partitions as required by the current hardware platform
+reqpart --add-boot
+# Add an LVM volume group and allocate a system root logical volume
+part pv.01 --grow
+volgroup rhel pv.01
+logvol / --vgname=rhel --fstype=xfs --size=50240 --name=root
+
+# Lock root user account
+rootpw --lock
+
+# Configure network to use DHCP and activate on boot
+network --bootproto=dhcp --device=link --activate --onboot=on
+
+# Configure bootc to install from the local embedded container repository.
+# See /osbuild-base.ks on ISO images generated by bootc-image-builder.
+ostreecontainer --transport oci --url /run/install/repo/container
+
+%post --log=/dev/console --erroronfail
+%end
+EOFKS
+echo "Kickstart file created at ${SOURCE_KS}"
+
+# Create the VM using location with kernel/initrd from ISO
+virt-install --name ${VMNAME} \
+--os-variant fedora-coreos-stable \
+--memory 8192 \
+--vcpus 4 \
+--disk size=120 \
+--network network=${NETNAME} \
+--location "${TARGET_ISO},kernel=images/pxeboot/vmlinuz,initrd=images/pxeboot/initrd.img" \
+--initrd-inject "${SOURCE_KS}" \
+--extra-args "inst.ks=file:/kickstart.ks console=ttyS0" \
+--serial pty \
+--console pty,target_type=serial \
+--wait
+
+# Clean up temporary kickstart file
+rm -f "${SOURCE_KS}"
 ----
 ====
 
@@ -107,25 +264,25 @@ This script creates a VM, attaches your self-contained ISO, injects the Kickstar
 
 === Create and boot the VM
 
-. Generate the Kickstart file:
+. Create a new isolated network:
 +
 [source,sh,role=execute]
 ----
-bash create-ks.sh
+sudo bash setup-isolated-network.sh
 ----
 
 . Create and start the VM:
 +
 [source,sh,role=execute]
 ----
-bash create-vm.sh
+sudo bash create-vm.sh
 ----
 
-Once the VM begins booting, connect to the console if needed:
+Once the VM begins booting, open a new terminal connect to the console to watch the installation process which should take 5-10mins to conclude:
 
 [source,sh,role=execute]
 ----
-virsh console microshift-bootc
+virsh console microshift-4.19-bootc-vm1
 ----
 
 You should now see the appliance boot into Image Mode.
@@ -133,7 +290,40 @@ You should now see the appliance boot into Image Mode.
 ---
 
 == 3.2 Verifying the Appliance After Boot
-Once logged in, verify that the system is running correctly.
+Once the VM has finished booting, you need to connect to it via SSH to verify the system is running correctly.
+
+=== Find the VM IP address and connect via SSH
+Before you can verify the appliance, you need to find its IP address and connect to it.
+
+. From the bastion host, check that the VM is running:
++
+[source,sh,role=execute]
+----
+sudo virsh list --all
+----
+
+. Find the IP address of the VM:
++
+[source,sh,role=execute]
+----
+sudo virsh domifaddr microshift-4.19-bootc-vm1
+----
++
+The output will show the IP address assigned to the VM. Note the IP address (for example, `192.168.100.165`).
+
+. Connect to the VM via SSH using the IP address:
++
+[source,sh,role=execute]
+----
+ssh redhat@<VM_IP_ADDRESS>
+----
++
+When prompted, enter the password: `redhat02`
++
+[NOTE]
+====
+The default user is `redhat` with password `redhat02`. You should see a message indicating "Boot Status is GREEN - Health Check SUCCESS" when you successfully connect.
+====
 
 === Check bootc system status
 . Confirm the system is running the v1 deployment:
@@ -142,6 +332,35 @@ Once logged in, verify that the system is running correctly.
 ----
 sudo bootc status
 ----
+
+=== Set up kubeconfig for MicroShift access
+Before you can interact with MicroShift using `oc` commands, you need to configure the kubeconfig file. MicroShift generates a local kubeconfig file that you can use to access the cluster.
+
+. Create the `.kube` directory in your home directory if it doesn't exist:
++
+[source,sh,role=execute]
+----
+mkdir -p ~/.kube
+----
+
+. Copy the MicroShift kubeconfig file to your home directory:
++
+[source,sh,role=execute]
+----
+sudo cp /var/lib/microshift/resources/kubeadmin/kubeconfig ~/.kube/config
+----
+
+. Set the correct permissions on the kubeconfig file:
++
+[source,sh,role=execute]
+----
+chmod go-r ~/.kube/config
+----
+
+[NOTE]
+====
+The kubeconfig file is automatically generated by MicroShift and contains the necessary credentials to access the cluster. For more information about kubeconfig files and remote access, see the link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.19/html/configuring/microshift-node-access-kubeconfig[Red Hat build of MicroShift documentation].
+====
 
 === Check MicroShift
 . Verify the node is ready:
@@ -182,7 +401,7 @@ This confirms your appliance is fully **air-gapped** and relying on the embedded
 +
 [source,sh,role=execute]
 ----
-cat manifests/kustomization.yaml
+cat wordpress/kustomization.yaml
 ----
 +
 [%collapsible]
@@ -201,7 +420,7 @@ namespace: wordpress
 +
 [source,sh,role=execute]
 ----
-cat manifests/wordpress.yaml
+cat wordpress/wordpress.yaml
 ----
 +
 [%collapsible]

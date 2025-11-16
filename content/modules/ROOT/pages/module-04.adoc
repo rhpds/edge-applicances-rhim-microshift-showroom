@@ -28,6 +28,7 @@ This “A/B boot” concept ensures your field-deployed appliances can be update
 == 4.2 Hands-On: Build the Updated Image 
 Now let’s create an updated version of our appliance: **v2**.  
 In a real-world scenario, this could include:
+
 * A new version of WordPress or another app,
 * OS security updates, or
 * Configuration changes.
@@ -47,26 +48,23 @@ Example content:
 [source,dockerfile]
 ----
 FROM localhost/microshift-4.19-bootc-embeeded:v1
-ARG USHIFT_VER=4.19
 
-RUN dnf config-manager \
-        --set-enabled rhocp-${USHIFT_VER}-for-rhel-9-$(uname -m)-rpms \
-        --set-enabled fast-datapath-for-rhel-9-$(uname -m)-rpms 
-
-RUN dnf update --enablerepo=rhel-9-for-$(uname -m)-baseos-eus-rpms \
-               --enablerepo=rhel-9-for-x86_64-appstream-eus-rpms \
-               -y --releasever=9.6 && \
+## Needed as bootc-image-builder requires a repo file to be present in the base image.
+# in the build.sh with TAG=v2, we replace the 4.19 repo with the 4.20 repo to allow upgrade MicroShift to 4.20. 
+ADD redhat.repo /etc/yum.repos.d/redhat.repo
+RUN dnf update --enablerepo=rhel-9-for-$(uname -m)-baseos-eus-rpms --enablerepo=rhel-9-for-x86_64-appstream-eus-rpms -y --releasever=9.6 && \
     dnf clean all
+
 ----
 
 . Build the new `v2` image using the provided script:
 +
 [source,sh,role=execute]
 ----
-bash -x build.sh v2
+time sudo bash -x build.sh v2 2>&1 | tee build-v2.log
 ----
 
-Once the build completes, the resulting image and ISO will be available in the `_build/` folder.
+Once the build completes, the resulting image and ISO will be available in the `/var/tmp/bootc-images/bootiso/` folder.
 
 [NOTE]
 ====
@@ -83,6 +81,11 @@ Now that your updated image is ready, let’s **upgrade the running appliance** 
 ----
 sudo bootc switch <registry_path>/<image_name>:v2
 ----
++
+[NOTE]
+====
+If using a local registry instead of quay.io, replace the registry path accordingly. For example: `sudo bootc switch <local_registry_host>:<port>/microshift-4.19-bootc-embeeded:v2`
+====
 
 . Apply and reboot to activate the update:
 +
@@ -108,10 +111,17 @@ You should see the **v2 image** as the active deployment and **v1** available as
 systemctl status greenboot-healthcheck.service
 ----
 
+. Review Greenboot logs to ensure update was successful:
++
+[source,sh,role=execute]
+----
+journalctl -u greenboot-healthcheck.service
+----
++
 [NOTE]
 ====
-If Greenboot detects a failure (for example, MicroShift doesn’t start correctly), it will automatically roll back to the previous working version.  
-That’s what makes RHEL Image Mode “atomic and safe by design”.
+You can also use `sudo greenboot status` to check the greenboot status. If Greenboot detects a failure (for example, MicroShift doesn't start correctly), it will automatically roll back to the previous working version.  
+That's what makes RHEL Image Mode "atomic and safe by design".
 ====
 
 [#delta_updates]
