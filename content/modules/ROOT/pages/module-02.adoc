@@ -4,6 +4,15 @@
 :source-highlighter: rouge
 :experimental:
 
+== Learning objectives
+By the end of this module, you will be able to:
+
+* Understand the structure of a bootc Containerfile and how it extends a base RHEL image
+* Explain how physically-bound images embed container images for disconnected operation
+* Build a base RHEL image with MicroShift using podman
+* Build a self-contained appliance image with embedded applications
+* Generate a bootable ISO from a container image using bootc-image-builder
+
 [#containerfile]
 == 2.1 Anatomy of a bootc Appliance Containerfile
 A `Containerfile` is the recipe for your appliance. It defines:
@@ -12,7 +21,7 @@ A `Containerfile` is the recipe for your appliance. It defines:
 * MicroShift components
 * Tools the appliance needs
 
-Let’s take a quick look at the file used to build our base image, which is inspired by downstream MicroShift link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.19/html/installing_with_image_mode_for_rhel/installing-a-bootc-image-and-publishing-to-a-registry#microshift-install-bootc-build-image_microshift-install-bootc-image[documentation].
+Let's take a quick look at the file used to build our base image, which is inspired by downstream MicroShift link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.19/html/installing_with_image_mode_for_rhel/installing-a-bootc-image-and-publishing-to-a-registry#microshift-install-bootc-build-image_microshift-install-bootc-image[documentation]. For more information on building bootc images, see link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/using_image_mode_for_rhel_to_build_deploy_and_manage_operating_systems/index#building-bootc-images_using-image-mode-for-rhel[Building bootc images].
 
 . View the `Containerfile` for the base image:
 +
@@ -325,6 +334,42 @@ When the build completes, the ISO will appear in the `_build/` directory.
 [NOTE]
 ====
 This ISO contains the OS, MicroShift, and all embedded container images — ready to run in an offline or air-gapped environment.
+====
+
+=== Validation checkpoint: Verify build success
+Before proceeding, verify that both images were built successfully:
+
+. Check that the base image exists:
++
+[source,sh,role=execute]
+----
+sudo podman images | grep microshift-4.19-bootc
+----
+
+. Verify the v1 appliance image exists:
++
+[source,sh,role=execute]
+----
+sudo podman images | grep microshift-4.19-bootc-embeeded
+----
+
+. Confirm the ISO file was created:
++
+[source,sh,role=execute]
+----
+ls -lh /var/tmp/bootc-images/*.iso
+----
+
+[IMPORTANT]
+====
+**Expected results:**
+
+* Base image `localhost/microshift-4.19-bootc:latest` should be present
+* Appliance image `localhost/microshift-4.19-bootc-embeeded:v1` should be present
+* ISO file `microshift-4.19-bootc-embeeded-v1.iso` should exist in `/var/tmp/bootc-images/` (or `_build/` directory)
+* ISO file size should be several GB (contains embedded container images)
+
+If any of these are missing, review the build logs (`build-base.log` and `build-v1.log`) for errors.
 ====
 
 == 2.4 What happens next

@@ -1,6 +1,15 @@
 = Module 4: Performing an Atomic Update 
 :page-nav-title: Performing an Atomic Update
 
+== Learning objectives
+By the end of this module, you will be able to:
+
+* Explain the A/B boot model and atomic update process
+* Build an updated appliance image (v2)
+* Perform an atomic system upgrade on a running appliance
+* Verify system health using greenboot
+* Understand rollback capabilities of RHEL Image Mode
+
 [#atomic_updates]
 == 4.1 The Power of Atomic Updates and Rollbacks
 One of the biggest advantages of RHEL Image Mode is the **atomic update model**.  
@@ -121,7 +130,52 @@ journalctl -u greenboot-healthcheck.service
 [NOTE]
 ====
 You can also use `sudo greenboot status` to check the greenboot status. If Greenboot detects a failure (for example, MicroShift doesn't start correctly), it will automatically roll back to the previous working version.  
-That's what makes RHEL Image Mode "atomic and safe by design".
+That's what makes RHEL Image Mode "atomic and safe by design". For more information on managing updates, see link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/using_image_mode_for_rhel_to_build_deploy_and_manage_operating_systems/index#managing-bootc-updates_using-image-mode-for-rhel[Managing bootc updates].
+====
+
+=== Validation checkpoint: Upgrade verification
+After the system reboots, verify the upgrade was successful:
+
+. Confirm v2 is now the active deployment:
++
+[source,sh,role=execute]
+----
+sudo bootc status
+----
+
+. Verify greenboot health check passed:
++
+[source,sh,role=execute]
+----
+sudo greenboot status
+----
+
+. Check that MicroShift is still running:
++
+[source,sh,role=execute]
+----
+oc get nodes
+oc get pods -A
+----
+
+. Verify rollback target is available:
++
+[source,sh,role=execute]
+----
+sudo bootc status | grep -A 5 "rollback"
+----
+
+[IMPORTANT]
+====
+**Expected results:**
+
+* `bootc status` should show v2 as the active deployment
+* `greenboot status` should show "GREEN" indicating health checks passed
+* MicroShift node should be in "Ready" state
+* Application pods should still be running
+* Previous v1 image should be available as a rollback target
+
+If greenboot shows "RED" or MicroShift is not running, the system should automatically roll back. You can manually roll back using `sudo bootc rollback` if needed.
 ====
 
 [#delta_updates]
@@ -138,6 +192,7 @@ With tools like *tar-diff*, you can generate compact binary patches between imag
 [#summary]
 == 4.5 Summary
 You’ve just experienced the key differentiator of Image Mode:
+
 * One-command upgrades with instant rollback.  
 * Predictable, tested states across your entire fleet.  
 * Optional support for smaller delta-based updates.  

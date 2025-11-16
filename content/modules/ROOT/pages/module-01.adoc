@@ -1,5 +1,13 @@
 = Module 1: Foundation: Environment Setup & Image Mode Foundations
 
+== Learning objectives
+By the end of this module, you will be able to:
+
+* Understand edge computing challenges and how RHEL Image Mode addresses them
+* Explain the build-deploy-manage workflow for bootc images
+* Navigate the lab environment and identify key components
+* Recognize the value of physically-bound images for disconnected deployments
+
 [#setup]
 == 1.1 Lab overview: Environment and components
 
