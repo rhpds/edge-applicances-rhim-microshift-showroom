@@ -6,9 +6,11 @@ By the end of this module, you will be able to:
 
 * Explain the A/B boot model and atomic update process
 * Build an updated appliance image (v2)
-* Perform an atomic system upgrade on a running appliance
+* Perform an atomic system upgrade on a running appliance using disconnected deployment
+* Export and transfer container images for offline deployment
 * Verify system health using greenboot
-* Understand rollback capabilities of RHEL Image Mode
+* Perform and verify manual rollbacks to previous system versions
+* Understand rollback capabilities and automatic rollback mechanisms of RHEL Image Mode
 
 [#atomic_updates]
 == 4.1 The Power of Atomic Updates and Rollbacks
@@ -66,7 +68,7 @@ RUN dnf update --enablerepo=rhel-9-for-$(uname -m)-baseos-eus-rpms --enablerepo=
 
 ----
 
-. Build the new `v2` image using the provided script:
+. Build the new `v2` image using the provided script (~ 2 minutes):
 +
 [source,sh,role=execute]
 ----
@@ -80,38 +82,154 @@ Once the build completes, the resulting image and ISO will be available in the `
 Each new version is simply another container image — giving you Git-like versioning for your operating system.
 ====
 
-[#upgrade]
-== 4.3 Hands-On: Upgrade the Live System
-Now that your updated image is ready, let’s **upgrade the running appliance** safely using atomic image switching.
+[NOTE]
+====
+**Image Size Consideration:** Building v2 on top of v1 creates a layered image that includes all previous layers, which increases image size (you can verify this with `podman images`—v2 is 7.59 GB vs. v1's 5.37 GB). In production, you can choose to build fresh images for each version instead of layering. For example, you could build v2 directly from the RHEL base or MicroShift base, rather than from v1. The `bootc switch` command works with both layered and fresh images—it simply changes the container image reference and preserves your system state (`/etc` and `/var`). Building fresh images can help manage image sizes, especially when you need to optimize for storage or bandwidth constraints.
+====
 
-. Stage the v2 image on your running appliance:
+[#upgrade]
+== 4.3 Hands-On: Upgrade the Live System (Disconnected Workflow)
+Now that your updated image is ready, let's **upgrade the running appliance** safely using atomic image switching. This workflow demonstrates a **disconnected deployment** where the image is transferred directly to the target node without requiring a container registry.
+
+=== Export the v2 image to a directory
+First, we'll export the v2 image from the local container storage to a directory format that can be transferred to the target node.
+
+. Create a directory for the exported image:
 +
 [source,sh,role=execute]
 ----
-sudo bootc switch <registry_path>/<image_name>:v2
+mkdir -p /var/tmp/microshift-4.20-bootc-v2
+----
+
+. Export the v2 image to the directory using `skopeo`:
++
+[source,sh,role=execute]
+----
+sudo skopeo copy containers-storage:localhost/microshift-4.20-bootc-embeeded:v2 dir:/var/tmp/microshift-4.20-bootc-v2
+----
++
+This creates an OCI-compliant directory structure containing all image layers and metadata.
+
+. Verify the exported image size:
++
+[source,sh,role=execute]
+----
+du -sh /var/tmp/microshift-4.20-bootc-v2
+----
++
+The directory should be approximately 7-8 GB (matching the image size you saw with `podman images`).
+
+=== Transfer the image to the target node
+Now we'll transfer the image directory to the target appliance. In this lab, we use SSH, but in production you could use USB sticks, external drives, or other offline transfer methods.
+
+. From the bastion host, transfer the image directory to the target VM:
++
+[source,sh,role=execute]
+----
+scp -r /var/tmp/microshift-4.20-bootc-v2/ redhat@<VM_IP_ADDRESS>:/var/tmp
 ----
 +
 [NOTE]
 ====
-If using a local registry instead of quay.io, replace the registry path accordingly. For example: `sudo bootc switch <local_registry_host>:<port>/microshift-4.19-bootc-embeeded:v2`
+In production disconnected environments, you might transfer the image directory via USB stick, external drive, or other offline methods. The directory structure is portable and can be copied to any location on the target system.
 ====
 
-. Apply and reboot to activate the update:
+=== Switch to the new image on the target node
+Now we'll connect to the target node and use `bootc switch` with directory transport to stage the update.
+
+. Connect to the target VM via SSH:
++
+[source,sh,role=execute]
+----
+ssh redhat@<VM_IP_ADDRESS>
+----
++
+When prompted, enter the password: `redhat02`
+
+. Verify the current system state:
++
+[source,sh,role=execute]
+----
+sudo bootc status
+microshift version
+oc get pods -A
+----
++
+You should see the v1 image is currently active and MicroShift 4.19 is running.
+
+. Stage the v2 image using directory transport:
++
+[source,sh,role=execute]
+----
+sudo bootc switch --transport dir /var/tmp/microshift-4.20-bootc-v2/
+----
++
+[NOTE]
+====
+The `--transport dir` option tells `bootc switch` to use a local directory instead of a container registry. This enables disconnected deployments where the image is transferred directly to the target system. The command will fetch and stage the image layers (approximately 7.6 GB), which may take a few minutes depending on disk I/O speed.
+====
+
+. Verify the image is staged:
++
+[source,sh,role=execute]
+----
+sudo bootc status
+sudo rpm-ostree status
+----
++
+You should see the v2 image listed as "Staged image" or "Queued for next boot", while the current v1 image remains as the "Booted image".
+
+[NOTE]
+====
+**Switching to Fresh Images:** The `bootc switch` command can switch to any container image reference—it does not require the target image to be based on the current image. You can switch from a layered image to a completely fresh image, or between any two images. The command preserves your system state (SSH keys, home directories, etc.) regardless of the image relationship. This flexibility allows you to choose the build strategy (layered vs. fresh) that best fits your needs for build speed, image size, or update frequency.
+====
+
+=== Apply and reboot to activate the update
+. Apply the staged update and reboot:
 +
 [source,sh,role=execute]
 ----
 sudo bootc upgrade --apply
 sudo reboot
 ----
++
+The system will reboot automatically. The connection will be closed.
 
-. After reboot, verify the system’s image version:
+=== Verify the upgrade after reboot
+After the system reboots, reconnect and verify the upgrade was successful.
+
+. Reconnect to the target VM via SSH:
++
+[source,sh,role=execute]
+----
+ssh redhat@<VM_IP_ADDRESS>
+----
++
+When prompted, enter the password: `redhat02`
+
+. Verify the system's image version:
 +
 [source,sh,role=execute]
 ----
 sudo bootc status
+sudo rpm-ostree status
 ----
 
-You should see the **v2 image** as the active deployment and **v1** available as a rollback target.
+You should see the **v2 image** (dir:/var/tmp/microshift-4.20-bootc-v2/) as the active deployment and **v1** available as a rollback target.
+
+. Verify MicroShift has been upgraded:
++
+[source,sh,role=execute]
+----
+microshift version
+----
++
+You should see MicroShift Version: 4.20.0 (upgraded from 4.19.7).
+
+[NOTE]
+====
+After reboot, MicroShift may take 1-2 minutes to start. If `oc get pods` shows connection refused, wait a moment and check again. Greenboot will monitor MicroShift startup and automatically roll back if it fails to start correctly.
+====
 
 . Check system health using Greenboot (the service that validates system readiness after each boot):
 +
@@ -142,6 +260,17 @@ After the system reboots, verify the upgrade was successful:
 ----
 sudo bootc status
 ----
++
+The active deployment should show `dir:/var/tmp/microshift-4.20-bootc-v2/` as the booted image.
+
+. Verify MicroShift version was upgraded:
++
+[source,sh,role=execute]
+----
+microshift version
+----
++
+Should show MicroShift Version: 4.20.0 (upgraded from 4.19.7).
 
 . Verify greenboot health check passed:
 +
@@ -169,7 +298,8 @@ sudo bootc status | grep -A 5 "rollback"
 ====
 **Expected results:**
 
-* `bootc status` should show v2 as the active deployment
+* `bootc status` should show v2 (dir:/var/tmp/microshift-4.20-bootc-v2/) as the active deployment
+* `microshift version` should show 4.20.0
 * `greenboot status` should show "GREEN" indicating health checks passed
 * MicroShift node should be in "Ready" state
 * Application pods should still be running
@@ -178,8 +308,108 @@ sudo bootc status | grep -A 5 "rollback"
 If greenboot shows "RED" or MicroShift is not running, the system should automatically roll back. You can manually roll back using `sudo bootc rollback` if needed.
 ====
 
+[#rollback]
+== 4.4 Hands-On: Exploring Rollbacks
+One of the key features of RHEL Image Mode is the ability to instantly roll back to a previous working state. The A/B boot model keeps both the current and previous images available, allowing you to revert changes if needed.
+
+=== Check rollback availability
+Before performing a rollback, verify that a rollback target is available:
+
+. Check the current bootc status:
++
+[source,sh,role=execute]
+----
+sudo bootc status
+----
++
+You should see:
+
+* **Booted image**: The currently running version (v2 in this case)
+* **Rollback image**: The previous version available for rollback (v1 in this case)
+
+[NOTE]
+====
+The rollback image is automatically preserved from the previous deployment. This is part of the A/B boot model—each update keeps the previous version as a rollback target.
+====
+
+=== Perform a manual rollback
+Now let's demonstrate a manual rollback to the previous version:
+
+. Initiate the rollback:
++
+[source,sh,role=execute]
+----
+sudo bootc rollback
+----
++
+This stages the rollback for the next boot. The output will show "Next boot: rollback deployment".
+
+. Reboot to activate the rollback:
++
+[source,sh,role=execute]
+----
+sudo systemctl reboot
+----
++
+The system will reboot automatically. The connection will be closed.
+
+=== Verify the rollback
+After the system reboots, reconnect and verify the rollback was successful:
+
+. Reconnect to the target VM via SSH:
++
+[source,sh,role=execute]
+----
+ssh redhat@<VM_IP_ADDRESS>
+----
++
+When prompted, enter the password: `redhat02`
+
+. Verify the system has rolled back:
++
+[source,sh,role=execute]
+----
+sudo bootc status
+----
++
+You should see:
+
+* **Booted image**: Now shows the previous version (v1: `oci:/run/install/repo/container`)
+* **Rollback image**: Now shows v2 (the version we just rolled back from)
+
+. Verify MicroShift has rolled back to the previous version:
++
+[source,sh,role=execute]
+----
+microshift version
+----
++
+You should see MicroShift Version: 4.19.7 (rolled back from 4.20.0).
+
+. Verify that applications are still running:
++
+[source,sh,role=execute]
+----
+oc get pods -A
+----
++
+All pods should still be running. The rollback preserves your application state.
+
+[IMPORTANT]
+====
+**Key Points About Rollbacks:**
+
+* **Instant rollback**: The rollback happens immediately on reboot—no reinstall or manual recovery needed
+* **State preservation**: Your system state (`/etc` and `/var`) is preserved during rollback
+* **Application continuity**: Applications continue running after rollback
+* **Bidirectional**: You can roll back and roll forward between any available deployments
+* **Automatic rollback**: If greenboot detects a failure, it automatically rolls back without manual intervention
+
+This demonstrates the reliability and safety of RHEL Image Mode's atomic update model.
+====
+
 [#delta_updates]
-== 4.4 Experimental: Delta Updates
+== 4.5 Experimental: Delta Updates
 In low-bandwidth environments, downloading an entire image for every update may not be practical.  
 **Delta updates** solve this by transferring only the difference between versions (v1 → v2).
 
@@ -190,7 +420,7 @@ With tools like *tar-diff*, you can generate compact binary patches between imag
 
 
 [#summary]
-== 4.5 Summary
+== 4.6 Summary
 You’ve just experienced the key differentiator of Image Mode:
 
 * One-command upgrades with instant rollback.  

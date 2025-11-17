@@ -187,8 +187,13 @@ This file builds on the base image and adds the embedded container images that w
 
 [NOTE]
 ====
-You’ll also notice helper scripts in the repository that copy container images into the image during build time.  
+You'll also notice helper scripts in the repository that copy container images into the image during build time.  
 These ensure the system can run fully offline.
+====
+
+[NOTE]
+====
+**Layered vs. Fresh Images:** This workshop demonstrates building layered images (RHEL base → MicroShift base → embedded v1 → embedded v2) for faster incremental builds. However, `bootc switch` does not require layered images—you can build and switch to completely fresh, independent images built directly from the RHEL base. Building fresh images for each version can help manage image sizes, as each image contains only the necessary components without accumulating redundant data from previous layers. For more information, see link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/using_image_mode_for_rhel_to_build_deploy_and_manage_operating_systems/index#managing-bootc-updates_using-image-mode-for-rhel[Managing bootc updates].
 ====
 
 [#build]
