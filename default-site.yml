@@ -8,6 +8,8 @@ content:
   sources:
     - url: .
       start_path: content
+      excludes:
+        - '**/workshop/**'
 
 ui:
   bundle:

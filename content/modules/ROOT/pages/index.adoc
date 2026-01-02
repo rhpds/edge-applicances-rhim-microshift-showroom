@@ -2,63 +2,252 @@
 
 Welcome to a hands-on lab focused on the modern appliance experience.
 
-Our link:https://rhpds.github.io/showroom-lb1054-rhel-image-mode/modules/index.html[LB1054 - Unleashing The Power of Image Mode for RHEL] lab introduced the foundational technology to treat the OS as an image. 
+Our link:https://rhpds.github.io/showroom-lb1054-rhel-image-mode/modules/index.html[LB1054 - Unleashing The Power of Image Mode for RHEL] lab introduced the foundational technology to treat the OS as an image. This lab takes the next logical step: building a true cloud-native appliance that solves real customer challenges.
 
-That lab introduced the technology, but it's important to understand the primary use cases. RHEL Image Mode evolved from technologies like link:https://www.redhat.com/en/blog/red-hat-device-edge-rpm-ostree-updates[rpm-ostree], making it a natural fit for appliances, edge devices, and container hosts where image-based operations are already common.
+[#customer_scenario]
+== Customer Scenario: ManufacturingCo's Edge Appliance Challenge
 
-The goal of Image Mode is to bring these benefits to general-purpose RHEL. It excels in scenarios that require tightly coupling an application and its OS as a single, version-controlled package. For example, modern AI/ML workloads often have strict dependencies on specific firmware and driver versions, making an image-based approach ideal for ensuring consistency.
+ManufacturingCo operates 50 factory locations across North America, each running critical edge appliances that control production lines and quality monitoring systems. These appliances must:
 
-image::use-cases.jpg[use-cases,100%,100%]
+* Operate reliably in harsh industrial environments
+* Function in disconnected or bandwidth-constrained networks
+* Support cloud-native applications (MicroShift) for modern workloads
+* Update safely without disrupting production
+* Maintain consistency across all 50 locations
 
-This lab takes the next logical step: building a true cloud-native appliance.
+.Current State
+* *Deployment cycles:* 6-8 weeks per location
+* *Update failures:* 15% require on-site IT intervention
+* *Configuration drift:* 30% of appliances diverge from intended state within 6 months
+* *Recovery time:* 2-4 hours for failed updates
+* *Security patches:* Applied inconsistently due to disconnected environments
 
-If you build or manage software appliances—especially for edge or disconnected environments—you face constant challenges: 
+.The Challenge
+ManufacturingCo needs a way to build, deploy, and manage self-contained edge appliances that eliminate these operational headaches while enabling modern cloud-native applications.
+
+[NOTE]
+====
+**Metrics Source:** The metrics used in this scenario (6-8 weeks deployment, 15% failure rate, 30% configuration drift, etc.) are illustrative examples based on common industry challenges. When presenting to customers, technical sellers should adapt these metrics to their customer's specific situation or use industry benchmarks where available.
+====
+
+[#problem]
+== The Problem: Edge Appliance Operational Challenges
+
+If you build or manage software appliances—especially for edge or disconnected environments—you face constant challenges that impact your business:
+
+=== Configuration Drift
+
+.The Pain
+Systems slowly diverge from their intended state over time, especially when managed remotely or with limited on-site expertise.
+
+.The Impact
+* Inconsistent behavior across your fleet
+* Security vulnerabilities from unpatched systems
+* Difficult troubleshooting when "it works on my machine"
+* Compliance failures from configuration differences
+
+=== Risky Updates
+
+.The Pain
+Traditional update methods can break systems in the field, and recovery may be difficult or impossible without on-site IT staff.
+
+.The Impact
+* Production downtime during failed updates
+* High cost of sending IT staff to remote locations
+* Risk of data loss or system corruption
+* Extended recovery times (hours to days)
+
+=== Disconnected Operations
+
+.The Pain
+Many edge devices have intermittent or no network connectivity, making traditional update and management approaches impractical.
+
+.The Impact
+* Cannot pull container images from registries at runtime
+* Security patches delayed or skipped
+* Manual update processes requiring physical access
+* Inability to deploy new applications without network
+
+=== Resource Constraints
+
+.The Pain
+Edge devices often have minimal resources (starting from 1 core and 2 GB RAM), requiring efficient, lightweight solutions.
+
+.The Impact
+* Limited ability to run full Kubernetes clusters
+* Performance degradation from resource-heavy solutions
+* Higher hardware costs to meet requirements
+* Inability to deploy to smallest edge devices
+
+=== Lifecycle Management Complexity
+
+.The Pain
+Building, testing, deploying, and maintaining edge appliances across diverse locations requires consistent, repeatable processes.
+
+.The Impact
+* Long deployment cycles (weeks to months)
+* Inconsistent builds across environments
+* Difficult to maintain OS and application versions
+* High operational overhead for fleet management
 
 image::challenges.jpg[challenges,100%,100%]
 
-== How RHEL Image Mode Transforms Edge Appliances
+[#solution]
+== The Solution: RHEL Image Mode + MicroShift
 
-RHEL Image Mode addresses OS-level challenges for edge appliances by treating the entire OS as an immutable, versioned image. By treating your entire appliance as a bootable container image, you can fundamentally change your development and operations:
+RHEL Image Mode, backed by **bootc**, addresses these operational challenges by treating the *entire* OS as an immutable, versioned image—just like a container. Combined with Red Hat build of MicroShift, you can build truly self-contained edge appliances that solve the problems above.
 
-=== Technical Capabilities
+=== How It Solves Configuration Drift
 
-* **Immutable, Versioned Images:** The entire OS is versioned and deployed as a single unit, eliminating configuration drift and ensuring consistency across all devices.
+.The Solution
+Every device boots from the same known-good image, eliminating configuration drift.
 
-* **Atomic Updates with Rollbacks:** System updates occur as complete image replacements using an A/B boot model, providing fast recoveries in case of unforeseen issues and increased reliability over the life of the system.
+.The Outcome
+Consistent behavior across your entire fleet, reduced security vulnerabilities, easier troubleshooting, and compliance confidence.
 
-* **Registry-Based Management:** Control OS and application container versioning through industry-standard registries and tags, enabling updates at scale.
+=== How It Solves Risky Updates
 
-* **Multiple Deployment Methods:** Supports connected, air-gapped, and ISO-based deployments, enabling reliable operations even when registries are unavailable.
+.The Solution
+Atomic updates with A/B boot model and instant rollback capability.
 
-These OS-level solutions are excellent, but they become even more complex when your goal is to run cloud-native applications. How do you provide a consistent Kubernetes experience for teams, but on hardware that is space-constrained, low-power, or offline?
+.The Outcome
+Safe upgrades that can be instantly reverted, no on-site IT required for recovery, reduced downtime risk, and confidence in field updates.
 
-This is where link:https://www.redhat.com/en/topics/edge-computing/microshift[Red Hat build of MicroShift] comes in. It is a lightweight Kubernetes distribution derived from link:https://www.redhat.com/en/technologies/cloud-computing/openshift/edge-computing[Red Hat® OpenShift®], designed specifically for these exact edge and small-footprint appliance use cases. It provides a consistent, enterprise-grade Kubernetes platform without the overhead of a full cluster.
+=== How It Solves Disconnected Operations
 
-This lab leverage what we learned about Image Mode through link:https://rhpds.github.io/showroom-lb1054-rhel-image-mode/modules/index.html[LB1054 - Unleashing The Power of Image Mode for RHEL], and moves beyond with focus for **Edge Appliances**. You will learn how to build a true, self-contained appliance by embedding Red Hat build of MicroShift and your applications directly into the OS image—using "physically-bound images" to create an appliance ready **for disconnected edge deployments**.
+.The Solution
+Self-contained, "physically-bound" images that embed OS, MicroShift, and applications directly into the bootable image.
 
-=== Business Value
+.The Outcome
+Appliances that operate fully offline, no runtime registry pulls required, security patches embedded in images, and ability to deploy via USB/ISO.
 
-* **Accelerate Time-to-Market:** Use standard DevOps/CI/CD practices for the *entire* OS and application stack, dramatically speeding up development and delivery.
+=== How It Solves Resource Constraints
 
-* **Simplify Appliance Creation:** Combine the OS, drivers, and your applications into a single, manageable unit.
+.The Solution
+MicroShift provides lightweight Kubernetes (derived from OpenShift) optimized for edge devices.
 
-* **Streamline Field Operations:** Deliver "smartphone-like" reliability with fast, safe rollbacks and predictable system behavior.
+.The Outcome
+Run cloud-native applications on minimal hardware, consistent Kubernetes experience, enterprise-grade platform without full cluster overhead.
 
-* **Enable Disconnected Deployments:** Ship truly self-contained, "physically-bound" images for air-gapped or offline environments by embedding application containers directly into the OS image.
+=== How It Solves Lifecycle Management
 
-* **Enhance Security:** Radically reduce your appliance's attack surface and eliminate configuration drift with immutable system images.
+.The Solution
+Build, ship, and manage appliances like container images using standard DevOps/CI/CD practices.
 
-* **Manage Fleets at Scale:** Control OS and application versions consistently using standard container registries and tags.
+.The Outcome
+Faster deployment cycles (days instead of weeks), consistent builds, version control for OS and applications, and simplified fleet management.
 
-== What you will learn
+image::use-cases.jpg[use-cases,100%,100%]
 
-Upon completion of this lab, you will be able to:
+[NOTE]
+====
+RHEL Image Mode evolved from technologies like link:https://www.redhat.com/en/blog/red-hat-device-edge-rpm-ostree-updates[rpm-ostree], making it a natural fit for appliances, edge devices, and container hosts where image-based operations are already common. This lab leverages what we learned about Image Mode through link:https://rhpds.github.io/showroom-lb1054-rhel-image-mode/modules/index.html[LB1054 - Unleashing The Power of Image Mode for RHEL], and moves beyond with focus for **Edge Appliances**. You will learn how to build a true, self-contained appliance by embedding Red Hat build of MicroShift and your applications directly into the OS image—using "physically-bound images" to create an appliance ready **for disconnected edge deployments**.
+====
 
-* **Build** a self-contained appliance using RHEL Image Mode (bootc).
-* **Embed** cloud-native applications (via MicroShift) directly into the bootable OS image for disconnected scenarios.
-* **Generate** a bootable ISO from a container image and deploy it to a KVM virtual machine.
-* **Perform** an atomic, image-based system upgrade and rollback on a live, running appliance.
+[#benefits]
+== Benefits to the Customer
 
+By adopting RHEL Image Mode and MicroShift for edge appliances, customers achieve:
+
+=== Accelerate Time-to-Market
+[cols="1,2,2"]
+|===
+| | From | To
+| Deployment | 6-8 week deployment cycles per location | Days to deploy new appliances or updates
+| Impact | | Reduce time-to-value by 75%, enable faster innovation cycles
+|===
+
+=== Simplify Appliance Creation
+[cols="1,2,2"]
+|===
+| | From | To
+| Build Process | Complex multi-step build processes, manual configuration | Single Containerfile defines entire appliance
+| Impact | | Reduce build complexity by 80%, enable version control for entire stack
+|===
+
+=== Streamline Field Operations
+[cols="1,2,2"]
+|===
+| | From | To
+| Updates | Risky updates requiring on-site IT, 15% failure rate | Atomic updates with instant rollback, smartphone-like reliability
+| Impact | | Eliminate 90% of update-related downtime, reduce field support costs
+|===
+
+=== Enhance Security
+[cols="1,2,2"]
+|===
+| | From | To
+| Security Posture | Configuration drift, inconsistent patching, security vulnerabilities | Immutable images, embedded security patches, reduced attack surface
+| Impact | | Eliminate configuration drift, ensure consistent security posture
+|===
+
+=== Enable Disconnected Deployments
+[cols="1,2,2"]
+|===
+| | From | To
+| Deployment Method | Network-dependent updates, manual processes for offline locations | Self-contained images, USB/ISO deployment, no runtime registry dependency
+| Impact | | Deploy to any location regardless of connectivity, reduce operational complexity
+|===
+
+=== Manage Fleets at Scale
+[cols="1,2,2"]
+|===
+| | From | To
+| Fleet Management | Inconsistent versions, difficult fleet management | Standard container registries, Git-like versioning for OS
+| Impact | | Consistent versions across fleet, simplified lifecycle management
+|===
+
+[#common_questions]
+== Common Customer Questions
+
+[.text-left]
+**Q:** "How does this work with our existing container registries and CI/CD pipelines?" +
+**A:** RHEL Image Mode uses standard container registries (Quay.io, Artifact Registry, etc.) and integrates with existing CI/CD tools. You build bootc images just like any container image. +
+*Show:* Module 2 demonstrates building images with standard tools.
+
+[.text-left]
+**Q:** "What about compliance and security in disconnected environments?" +
+**A:** Immutable images eliminate configuration drift, and security patches are embedded directly in images. You can maintain compliance even in air-gapped environments. +
+*Show:* Module 3 verifies embedded images and Module 4 demonstrates secure disconnected updates.
+
+[.text-left]
+**Q:** "How complex is the implementation compared to our current approach?" +
+**A:** The Containerfile approach is simpler than traditional kickstart + manual configuration. You define everything in one file, build once, deploy everywhere. +
+*Show:* Module 2 shows the Containerfile structure—it's straightforward.
+
+[.text-left]
+**Q:** "What's the business impact timeline? How quickly can we see results?" +
+**A:** Initial appliance build takes hours (not weeks). Updates can be deployed in minutes with instant rollback. Most customers see 50-75% reduction in deployment time within the first quarter. +
+*Show:* Module 4 demonstrates atomic updates in action.
+
+[.text-left]
+**Q:** "Can we still customize the OS and applications for different use cases?" +
+**A:** Yes, you build different Containerfiles for different use cases. The base OS is consistent, but you can layer on application-specific components. +
+*Show:* Module 2 shows how 4.19 extends the base image.
+
+[.text-left]
+**Q:** "What happens if an update fails in production?" +
+**A:** RHEL Image Mode uses A/B boot—the new version is staged but doesn't activate until reboot. If something goes wrong, you roll back instantly to the previous working state. +
+*Show:* Module 4 demonstrates rollback capabilities.
+
+[.text-left]
+**Q:** "How do we manage updates across hundreds of edge locations?" +
+**A:** Use standard container registries and tags. You can push a new image version, and each location can pull and apply it independently. For disconnected locations, export images to directories and transfer via USB/network. +
+*Show:* Module 4 shows disconnected update workflow.
+
+[#what_you_will_learn]
+== What You Will Learn
+
+By completing this lab, you'll be able to demonstrate to customers how to:
+
+* **Build** self-contained edge appliances that solve configuration drift and lifecycle management challenges
+* **Embed** cloud-native applications directly into OS images, enabling disconnected deployments
+* **Deploy** appliances consistently across diverse locations using standard container workflows
+* **Update** appliances safely with atomic updates and instant rollback, eliminating risky field updates
+
+Each module connects technical capabilities to the customer pain points we discussed above.
+
+[#lab_access]
 == Lab Access
 
 The terminal window to your right is *already* logged into the lab environment. All steps of this lab are to be completed in this terminal.

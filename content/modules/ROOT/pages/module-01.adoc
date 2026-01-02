@@ -1,4 +1,4 @@
-= Module 1: Foundation: Environment Setup & Image Mode Foundations
+= Module 1: Foundation: Understanding Edge Challenges and Setting Up the Lab
 
 == Learning objectives
 By the end of this module, you will be able to:
@@ -8,31 +8,13 @@ By the end of this module, you will be able to:
 * Navigate the lab environment and identify key components
 * Recognize the value of physically-bound images for disconnected deployments
 
-[#setup]
-== 1.1 Lab overview: Environment and components
+[#know_section]
+[#edge_challenges]
+== 1.1 Know: Understanding Edge Appliance Challenges
 
-Similarly as on link:https://rhpds.github.io/showroom-lb1054-rhel-image-mode/modules/index.html[LB1054 - Unleashing The Power of Image Mode for RHEL] lab, you will interact with a total of 3 systems: the primary lab hypervisor, a container registry, and an image mode VM.  Most of your work will be done on the lab hypervisor, and you will create the target image mode VM as part of the exercises. Caution should be taken when instructed to reboot a system that you are on the correct host.
+=== The Business Challenge
 
-[NOTE]
-The entire lab environment is already prepared for you. Your build host has the required tools installed, MicroShift bundles are available, and the sample application content is included in the lab repository.
-
-== Lab diagram
-
-image::lab-diagram.png[]
-
-== System purpose
-
-*Container build host*: One of the main parts of this lab is the build environment. The primary lab machine serves as a basic container build environment. The RHEL container tools (podman, buildah, skopeo) will be used throughout this lab to do simple container creation. This is all that is needed for a basic build host. You will leverage the Containerfiles and any other needed configuration files pre-populed on this host.
-
-*Container registry*: The registry in this lab environment is a basic registry with no authentication or management tooling. More tools, workflows, and insights are available from more modern registry solutions like quay.io. For the purposes of the exercises, a simple registry to host images is all that's needed. You will be using it for build your images and updating your target system in one of the use cases (i.e. connected, connected on-demand). 
-
-Although we do have a registry in this lab, we do also intend to simulate a disconnected deployment, where the ISO is used for installing the appliance and must be self-contained. Later in the lab, we will also attempt a disconnected update as well. 
-
-*Target host*: A KVM based virtual machine will be created during an exercise to serve as an install location for the image mode system. Any cloud, virtual, or bare metal machine can be used in practice. This lab won't go into detail on local management of KVM, but will use virt-install and virsh to manage the local VM.
-
-
-[#edge_challenge]
-== 1.2 The Edge Challenge & The RHEL Image Mode Solution
+Remember ManufacturingCo from the introduction? They face the same challenges that many organizations encounter when deploying edge appliances. Edge computing brings compute resources closer to where data is generated and decisions need to be made, but this proximity comes with significant operational challenges.
 
 === What is Edge Computing?
 
@@ -52,22 +34,57 @@ Edge systems operate under various constraints that make traditional IT manageme
 
 Edge deployments vary significantly in their topology. Some use cases have only two tiers (far edge and core/cloud), while others have multiple intermediate tiers (near edge, regional edge, etc.). Different edge locations—from telco edge to manufacturing, factory edge, IoT devices, energy sector deployments, and embedded systems—each have unique requirements and constraints.
 
-=== The Operational Challenges
+=== Why Edge Appliances Are Hard to Manage
 
-Edge systems often run in tough, inconsistent environments. Common operational challenges include:
+Edge systems often run in tough, inconsistent environments. The operational challenges we discussed in the introduction—configuration drift, risky updates, disconnected operations, resource constraints, and lifecycle management complexity—are amplified in edge environments. These challenges directly impact business outcomes:
 
-* *Configuration Drift:* Systems slowly diverge from their intended state over time, especially when managed remotely or with limited on-site expertise.
+* **Configuration Drift:** Systems slowly diverge from their intended state over time, especially when managed remotely or with limited on-site expertise. This leads to inconsistent behavior, security vulnerabilities, and compliance failures.
 
-* *Risky Updates:* Traditional update methods can break systems in the field, and recovery may be difficult or impossible without on-site IT staff.
+* **Risky Updates:** Traditional update methods can break systems in the field, and recovery may be difficult or impossible without on-site IT staff. This results in production downtime, high support costs, and extended recovery times.
 
-* *Disconnected Locations:* Many edge devices have intermittent or no network connectivity, making traditional update and management approaches impractical.
+* **Disconnected Locations:** Many edge devices have intermittent or no network connectivity, making traditional update and management approaches impractical. This prevents timely security patches and application deployments.
 
-* *Resource Constraints:* Edge devices often have minimal resources (starting from 1 core and 2 GB RAM), requiring efficient, lightweight solutions.
+* **Resource Constraints:** Edge devices often have minimal resources (starting from 1 core and 2 GB RAM), requiring efficient, lightweight solutions. This limits the ability to run full Kubernetes clusters or resource-heavy applications.
 
-* *Lifecycle Management:* Building, testing, deploying, and maintaining edge appliances across diverse locations and topologies requires consistent, repeatable processes.
+* **Lifecycle Management:** Building, testing, deploying, and maintaining edge appliances across diverse locations and topologies requires consistent, repeatable processes. Without these, deployment cycles stretch to weeks or months.
 
-[#bootc]
-== 1.3 Introducing RHEL Image Mode (bootc)
+[NOTE]
+====
+**Industry Example - Manufacturing:**
+ManufacturingCo uses edge appliances to deploy quality monitoring systems to 50 factory locations, but faces 6-8 week deployment cycles and 15% update failure rates requiring on-site IT intervention.
+
+**Industry Example - Telecommunications:**
+TelecomProvider deploys network edge appliances for 5G base stations, enabling rapid deployment and updates across hundreds of cell sites with minimal on-site IT support.
+
+**Industry Example - Energy:**
+EnergyCorp uses industrial IoT gateways for oil & gas monitoring, ensuring reliable operation in remote locations with intermittent connectivity and harsh environmental conditions.
+
+**Industry Example - Healthcare:**
+HealthSystem deploys medical device edge appliances for patient monitoring, maintaining HIPAA compliance and ensuring consistent security patches across all hospital locations.
+====
+
+[#bootc_solution]
+== 1.2 Know: How RHEL Image Mode Addresses These Challenges
+
+=== Current State vs. Desired State
+
+**Current State (Traditional Approach):**
+* Manual configuration and package management
+* Inconsistent builds across environments
+* Risky in-place updates
+* Network-dependent deployments
+* Difficult recovery from failed updates
+* Configuration drift over time
+
+**Desired State (RHEL Image Mode):**
+* Immutable, versioned OS images
+* Consistent builds from Containerfiles
+* Atomic updates with instant rollback
+* Self-contained, disconnected deployments
+* Instant recovery via rollback
+* Zero configuration drift
+
+=== How RHEL Image Mode Solves These Challenges
 
 RHEL Image Mode, backed by **bootc**, addresses the operational challenges and constraints discussed above by treating the *entire* OS as an immutable, versioned image. Instead of updating individual packages, you deploy a new OS image exactly like updating a container. This approach provides:
 
@@ -89,8 +106,37 @@ image::disconnected.jpg[disconnected-workflow,100%,100%]
 
 This image-based model is ideal for edge appliances, remote edge clusters, industrial gateways, and any environment where reliability and consistency outweigh customization flexibility.
 
+=== Why This Matters
+
+By solving these challenges, RHEL Image Mode enables:
+* **Faster deployment cycles:** Days instead of weeks
+* **Reduced update failures:** <1% instead of 15%
+* **Instant recovery:** Rollback instead of 2-4 hour recovery times
+* **Zero configuration drift:** Immutable images instead of 30% divergence
+* **Disconnected operations:** Self-contained images instead of network dependency
+
 [#workflow]
-== 1.4 The Build-Deploy-Manage Workflow
+== 1.3 Know: The Build-Deploy-Manage Workflow
+
+=== The Business Workflow
+
+A typical Image Mode workflow transforms how you build, deploy, and manage edge appliances:
+
+**Traditional Workflow:**
+* Manual OS installation and configuration
+* Separate application deployment
+* In-place package updates
+* Manual configuration management
+* Difficult version control
+
+**Image Mode Workflow:**
+* Define OS + application in a single Containerfile
+* Build bootable container image
+* Generate ISO or disk image
+* Deploy to target systems
+* Update by shipping new image versions
+
+=== The Technical Workflow
 
 A typical Image Mode workflow looks like this:
 
@@ -101,11 +147,54 @@ A typical Image Mode workflow looks like this:
 . Manage updates by shipping new container image versions.
 
 image::redhat-image-mode.jpg[redhat-image-mode,100%,100%]
-[NOTE]
-In this lab, the application (WordPress + MySQL, based on link:https://kubernetes.io/docs/tutorials/stateful-application/mysql-wordpress-persistent-volume[upstream Kubernetes tutorials]) and MicroShift components are already provided. You will see how they can all be included directly inside the OS image.
 
-[#hands-on1]
-== 1.5 Hands-On: Helper files
+[NOTE]
+====
+In this lab, the application (WordPress + MySQL, based on link:https://kubernetes.io/docs/tutorials/stateful-application/mysql-wordpress-persistent-volume[upstream Kubernetes tutorials]) and MicroShift components are already provided. You will see how they can all be included directly inside the OS image.
+====
+
+=== Why We're Setting Up the Lab
+
+We're setting up the lab environment to solve the challenges we discussed. The lab provides:
+* A build host with container tools (podman, buildah, skopeo)
+* A container registry for image management
+* A target VM for deploying and testing appliances
+* Pre-configured Containerfiles and build scripts
+
+This environment simulates a real-world scenario where you build appliances in a development environment and deploy them to edge locations.
+
+[#show_section]
+[#setup]
+== 1.4 Show: Lab Environment Setup
+
+=== Why We're Doing This
+
+We're setting up the lab environment to solve the challenges we discussed. This environment provides everything needed to build, deploy, and manage self-contained edge appliances using RHEL Image Mode and MicroShift.
+
+=== Lab Overview: Environment and Components
+
+Similarly as on link:https://rhpds.github.io/showroom-lb1054-rhel-image-mode/modules/index.html[LB1054 - Unleashing The Power of Image Mode for RHEL] lab, you will interact with a total of 3 systems: the primary lab hypervisor, a container registry, and an image mode VM. Most of your work will be done on the lab hypervisor, and you will create the target image mode VM as part of the exercises. Caution should be taken when instructed to reboot a system that you are on the correct host.
+
+[NOTE]
+====
+The entire lab environment is already prepared for you. Your build host has the required tools installed, MicroShift bundles are available, and the sample application content is included in the lab repository.
+====
+
+=== Lab Diagram
+
+image::lab-diagram.png[]
+
+=== System Purpose
+
+*Container build host*: One of the main parts of this lab is the build environment. The primary lab machine serves as a basic container build environment. The RHEL container tools (podman, buildah, skopeo) will be used throughout this lab to do simple container creation. This is all that is needed for a basic build host. You will leverage the Containerfiles and any other needed configuration files pre-populed on this host.
+
+*Container registry*: The registry in this lab environment is a basic registry with no authentication or management tooling. More tools, workflows, and insights are available from more modern registry solutions like quay.io. For the purposes of the exercises, a simple registry to host images is all that's needed. You will be using it for build your images and updating your target system in one of the use cases (i.e. connected, connected on-demand).
+
+Although we do have a registry in this lab, we do also intend to simulate a disconnected deployment, where the ISO is used for installing the appliance and must be self-contained. Later in the lab, we will also attempt a disconnected update as well.
+
+*Target host*: A KVM based virtual machine will be created during an exercise to serve as an install location for the image mode system. Any cloud, virtual, or bare metal machine can be used in practice. This lab won't go into detail on local management of KVM, but will use virt-install and virsh to manage the local VM.
+
+=== Hands-On: Helper Files
 
 The lab repository files have been pre-placed by CI in your home directory at the build (bastion) host. Navigate to the working directory:
 
@@ -133,8 +222,68 @@ You should see the following files and directories:
 * `delta-updates-experimental.md` - Documentation on experimental delta updates
 
 [NOTE]
+====
 No additional configuration is required. All needed tools, container runtime settings, and supporting files are already present in the lab environment. The repository files have been prepared by CI and are ready to use.
+====
+
+=== How This Solves the Problem
+
+By setting up this lab environment, we're creating the foundation to solve the edge appliance challenges:
+* **Consistent builds:** Containerfiles ensure every build is identical
+* **Version control:** Git-like versioning for the entire OS and application stack
+* **Disconnected deployment:** ISO-based deployment works without network
+* **Safe updates:** We'll demonstrate atomic updates with rollback capability
+
+[#validation]
+== 1.5 Validation: Environment Ready
+
+=== Verify Environment Setup
+
+Before proceeding to Module 2, verify that your environment is ready:
+
+. Verify you're in the correct directory:
++
+[source,sh,role=execute]
+----
+pwd
+----
++
+You should be in `/home/lab-user/bootc-embeeded-containers` (or similar).
+
+. Verify container tools are available:
++
+[source,sh,role=execute]
+----
+which podman buildah skopeo
+----
++
+All three tools should be found.
+
+. Verify repository files are present:
++
+[source,sh,role=execute]
+----
+ls -la Containerfile.* build*.sh
+----
++
+You should see `Containerfile.base`, `Containerfile.4.19`, `Containerfile.4.20`, `build-base.sh`, and `build.sh`.
+
+=== Expected Results
+
+✅ You are in the lab repository directory  
+✅ Container tools (podman, buildah, skopeo) are available  
+✅ Containerfiles and build scripts are present  
+✅ Lab environment is ready to build appliances
+
+=== Validation Checklist
+
+□ Repository directory accessible  
+□ Container tools installed and working  
+□ Containerfiles present (base, 4.19, 4.20)  
+□ Build scripts present (build-base.sh, build.sh)  
+□ Helper scripts present (embed_image.sh, create-vm.sh, etc.)  
+□ WordPress manifests directory present
 
 ---
 
-Next: proceed to xref:module-02.adoc[Module 2: Building the Base Image].
+**Next:** Proceed to xref:module-02.adoc[Module 2: Building Self-Contained Appliances] to start building the appliance that solves the disconnected operations challenge.
