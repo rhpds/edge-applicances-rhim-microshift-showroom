@@ -229,6 +229,7 @@ No additional configuration is required. All needed tools, container runtime set
 === How This Solves the Problem
 
 By setting up this lab environment, we're creating the foundation to solve the edge appliance challenges:
+
 * **Consistent builds:** Containerfiles ensure every build is identical
 * **Version control:** Git-like versioning for the entire OS and application stack
 * **Disconnected deployment:** ISO-based deployment works without network

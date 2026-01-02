@@ -15,14 +15,16 @@ ManufacturingCo operates 50 factory locations across North America, each running
 * Update safely without disrupting production
 * Maintain consistency across all 50 locations
 
-.Current State
+=== Current State
+
 * *Deployment cycles:* 6-8 weeks per location
 * *Update failures:* 15% require on-site IT intervention
 * *Configuration drift:* 30% of appliances diverge from intended state within 6 months
 * *Recovery time:* 2-4 hours for failed updates
 * *Security patches:* Applied inconsistently due to disconnected environments
 
-.The Challenge
+=== The Challenge
+
 ManufacturingCo needs a way to build, deploy, and manage self-contained edge appliances that eliminate these operational headaches while enabling modern cloud-native applications.
 
 [NOTE]
@@ -37,10 +39,12 @@ If you build or manage software appliances—especially for edge or disconnected
 
 === Configuration Drift
 
-.The Pain
+==== The Pain
+
 Systems slowly diverge from their intended state over time, especially when managed remotely or with limited on-site expertise.
 
-.The Impact
+==== The Impact
+
 * Inconsistent behavior across your fleet
 * Security vulnerabilities from unpatched systems
 * Difficult troubleshooting when "it works on my machine"
@@ -48,10 +52,12 @@ Systems slowly diverge from their intended state over time, especially when mana
 
 === Risky Updates
 
-.The Pain
+==== The Pain
+
 Traditional update methods can break systems in the field, and recovery may be difficult or impossible without on-site IT staff.
 
-.The Impact
+==== The Impact
+
 * Production downtime during failed updates
 * High cost of sending IT staff to remote locations
 * Risk of data loss or system corruption
@@ -59,10 +65,12 @@ Traditional update methods can break systems in the field, and recovery may be d
 
 === Disconnected Operations
 
-.The Pain
+==== The Pain
+
 Many edge devices have intermittent or no network connectivity, making traditional update and management approaches impractical.
 
-.The Impact
+==== The Impact
+
 * Cannot pull container images from registries at runtime
 * Security patches delayed or skipped
 * Manual update processes requiring physical access
@@ -70,10 +78,12 @@ Many edge devices have intermittent or no network connectivity, making tradition
 
 === Resource Constraints
 
-.The Pain
+==== The Pain
+
 Edge devices often have minimal resources (starting from 1 core and 2 GB RAM), requiring efficient, lightweight solutions.
 
-.The Impact
+==== The Impact
+
 * Limited ability to run full Kubernetes clusters
 * Performance degradation from resource-heavy solutions
 * Higher hardware costs to meet requirements
@@ -81,10 +91,12 @@ Edge devices often have minimal resources (starting from 1 core and 2 GB RAM), r
 
 === Lifecycle Management Complexity
 
-.The Pain
+==== The Pain
+
 Building, testing, deploying, and maintaining edge appliances across diverse locations requires consistent, repeatable processes.
 
-.The Impact
+==== The Impact
+
 * Long deployment cycles (weeks to months)
 * Inconsistent builds across environments
 * Difficult to maintain OS and application versions
@@ -99,42 +111,52 @@ RHEL Image Mode, backed by **bootc**, addresses these operational challenges by 
 
 === How It Solves Configuration Drift
 
-.The Solution
+==== The Solution
+
 Every device boots from the same known-good image, eliminating configuration drift.
 
-.The Outcome
+==== The Outcome
+
 Consistent behavior across your entire fleet, reduced security vulnerabilities, easier troubleshooting, and compliance confidence.
 
 === How It Solves Risky Updates
 
-.The Solution
+==== The Solution
+
 Atomic updates with A/B boot model and instant rollback capability.
 
-.The Outcome
+==== The Outcome
+
 Safe upgrades that can be instantly reverted, no on-site IT required for recovery, reduced downtime risk, and confidence in field updates.
 
 === How It Solves Disconnected Operations
 
-.The Solution
+==== The Solution
+
 Self-contained, "physically-bound" images that embed OS, MicroShift, and applications directly into the bootable image.
 
-.The Outcome
+==== The Outcome
+
 Appliances that operate fully offline, no runtime registry pulls required, security patches embedded in images, and ability to deploy via USB/ISO.
 
 === How It Solves Resource Constraints
 
-.The Solution
+==== The Solution
+
 MicroShift provides lightweight Kubernetes (derived from OpenShift) optimized for edge devices.
 
-.The Outcome
+==== The Outcome
+
 Run cloud-native applications on minimal hardware, consistent Kubernetes experience, enterprise-grade platform without full cluster overhead.
 
 === How It Solves Lifecycle Management
 
-.The Solution
+==== The Solution
+
 Build, ship, and manage appliances like container images using standard DevOps/CI/CD practices.
 
-.The Outcome
+==== The Outcome
+
 Faster deployment cycles (days instead of weeks), consistent builds, version control for OS and applications, and simplified fleet management.
 
 image::use-cases.jpg[use-cases,100%,100%]

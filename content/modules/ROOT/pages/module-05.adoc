@@ -1,18 +1,157 @@
-= Module 5: Conclusion
+= Module 5: Business Outcomes & Resources
 
+[#know_section]
 [#recap]
-== 5.1 Recap of Business Value & Key Takeaways
-This lab has demonstrated the power of RHEL Image Mode for building, deploying, and managing edge appliances. By treating the OS and applications as a single, versioned unit, you can:
+== 5.1 Know: Connecting Solutions to Customer Problems
 
-* *Accelerate Time-to-Market:* Utilize DevOps/CI/CD practices for the entire system.
-* *Simplify Appliance Creation:* Combine the OS, applications, and drivers into a single artifact.
-* *Streamline Field Operations:* Benefit from smartphone-like reliability with atomic updates and rollbacks.
-* *Enhance Security:* Reduce the attack surface and prevent configuration drift.
-* *Enable Disconnected Deployments:* Ship self-contained appliances for air-gapped environments.
-* *Manage Fleets at Scale:* Use standard container registries to manage OS and application versions.
+=== How Each Module Solved a Customer Challenge
+
+Throughout this workshop, we've demonstrated how RHEL Image Mode and MicroShift solve the operational challenges that ManufacturingCo (and similar organizations) face when deploying edge appliances.
+
+=== Module 1: Understanding Edge Challenges
+
+**The Challenge:** Edge appliances are hard to manage due to configuration drift, risky updates, disconnected operations, resource constraints, and lifecycle management complexity.
+
+**The Solution:** We introduced RHEL Image Mode as a way to treat the entire OS as an immutable, versioned image—just like a container. This provides consistency, reliability, simplicity, disconnected operation, and resource efficiency.
+
+**The Outcome:** Participants understand why edge appliances are challenging and how RHEL Image Mode addresses these challenges at a fundamental level.
+
+=== Module 2: Building Self-Contained Appliances
+
+**The Challenge:** Disconnected operations—many edge devices have intermittent or no network connectivity, making traditional update and management approaches impractical.
+
+**The Solution:** We built self-contained, "physically-bound" images that embed OS, MicroShift, and applications directly into the bootable image. This enables true offline operation.
+
+**The Outcome:** Participants can build appliances that operate completely offline, eliminating the need for runtime registry access. This solves the disconnected operations challenge for ManufacturingCo's factory locations.
+
+=== Module 3: Deploying to Edge Locations
+
+**The Challenge:** Deployment complexity—how to get appliances to edge locations reliably and consistently, regardless of network connectivity.
+
+**The Solution:** We deployed the appliance using ISO-based deployment to an isolated network, proving that embedded container images are used (not pulled from registries).
+
+**The Outcome:** Participants verified that the appliance operates completely offline, with all images "already present on machine." This confirms that ManufacturingCo can deploy to any location regardless of connectivity.
+
+=== Module 4: Safe Updates & Rollbacks
+
+**The Challenge:** Risky updates—traditional update methods can break systems in the field, with 15% failure rate requiring on-site IT intervention and 2-4 hour recovery times.
+
+**The Solution:** We demonstrated atomic updates with A/B boot model and instant rollback capability. Updates are staged safely, and if something goes wrong, the system rolls back instantly.
+
+**The Outcome:** Participants experienced safe, atomic updates that can be instantly reverted. This eliminates the risky updates challenge for ManufacturingCo, reducing update failures from 15% to <1% and recovery time from 2-4 hours to instant rollback.
+
+=== The Complete Solution
+
+Together, these modules demonstrate a complete solution for edge appliance management:
+
+* **Configuration Drift:** Solved by immutable, versioned images (Module 1, 2)
+* **Risky Updates:** Solved by atomic updates with instant rollback (Module 4)
+* **Disconnected Operations:** Solved by self-contained, physically-bound images (Module 2, 3)
+* **Resource Constraints:** Solved by lightweight MicroShift (Module 1, 2)
+* **Lifecycle Management Complexity:** Solved by container-based workflows (Module 1, 2, 4)
+
+[#quantified_outcomes]
+== 5.2 Know: Quantified Business Outcomes
+
+=== From Challenges to Results
+
+By adopting RHEL Image Mode and MicroShift for edge appliances, customers like ManufacturingCo achieve measurable improvements:
+
+=== Accelerate Time-to-Market
+
+**From:** 6-8 week deployment cycles per location  
+**To:** Days to deploy new appliances or updates  
+**Impact:** Reduce time-to-value by 75%, enable faster innovation cycles
+
+**How We Achieved This:**
+* Single Containerfile defines entire appliance (Module 2)
+* Standard container workflows enable CI/CD practices (Module 2)
+* ISO-based deployment works for any location (Module 3)
+* Atomic updates deploy in minutes, not weeks (Module 4)
+
+=== Simplify Appliance Creation
+
+**From:** Complex multi-step build processes, manual configuration  
+**To:** Single Containerfile defines entire appliance  
+**Impact:** Reduce build complexity by 80%, enable version control for entire stack
+
+**How We Achieved This:**
+* Containerfile approach replaces kickstart + manual configuration (Module 2)
+* Version control for OS and applications together (Module 2)
+* Reproducible builds from single specification (Module 2)
+
+=== Streamline Field Operations
+
+**From:** Risky updates requiring on-site IT, 15% failure rate  
+**To:** Atomic updates with instant rollback, smartphone-like reliability  
+**Impact:** Eliminate 90% of update-related downtime, reduce field support costs
+
+**How We Achieved This:**
+* A/B boot model ensures safe updates (Module 4)
+* Instant rollback eliminates recovery time (Module 4)
+* Automatic rollback via greenboot (Module 4)
+* No on-site IT required for recovery (Module 4)
+
+=== Enhance Security
+
+**From:** Configuration drift, inconsistent patching, security vulnerabilities  
+**To:** Immutable images, embedded security patches, reduced attack surface  
+**Impact:** Eliminate configuration drift, ensure consistent security posture
+
+**How We Achieved This:**
+* Immutable images eliminate configuration drift (Module 1, 2)
+* Security patches embedded in images (Module 2, 4)
+* Consistent security posture across all locations (Module 1, 2)
+
+=== Enable Disconnected Deployments
+
+**From:** Network-dependent updates, manual processes for offline locations  
+**To:** Self-contained images, USB/ISO deployment, no runtime registry dependency  
+**Impact:** Deploy to any location regardless of connectivity, reduce operational complexity
+
+**How We Achieved This:**
+* Physically-bound images embed all container images (Module 2)
+* ISO-based deployment works offline (Module 3)
+* Directory transport for disconnected updates (Module 4)
+* Verified "already present on machine" operation (Module 3)
+
+=== Manage Fleets at Scale
+
+**From:** Inconsistent versions, difficult fleet management  
+**To:** Standard container registries, Git-like versioning for OS  
+**Impact:** Consistent versions across fleet, simplified lifecycle management
+
+**How We Achieved This:**
+* Standard container registries for image management (Module 2, 4)
+* Git-like versioning for entire OS (Module 2, 4)
+* Consistent builds across all locations (Module 2)
+* Atomic updates ensure consistent versions (Module 4)
+
+=== ManufacturingCo's Transformation
+
+**Before RHEL Image Mode:**
+* 6-8 week deployment cycles per location
+* 15% update failure rate requiring on-site IT
+* 30% configuration drift within 6 months
+* 2-4 hour recovery times for failed updates
+* Inconsistent security patches due to disconnected environments
+
+**After RHEL Image Mode:**
+* Days to deploy new appliances or updates
+* <1% update failure rate with automatic rollback
+* 0% configuration drift (immutable images)
+* Instant rollback (seconds, not hours)
+* Consistent security patches embedded in images
+
+**Business Impact:**
+* 75% reduction in deployment time
+* 90% reduction in update-related downtime
+* Elimination of on-site IT intervention for updates
+* Consistent security posture across all 50 locations
+* Ability to deploy to any location regardless of connectivity
 
 [#resources]
-== 5.2 Further Resources & Documentation
+== 5.3 Resources & Documentation
 
 This section provides a comprehensive list of all Red Hat documentation and resources referenced throughout this workshop.
 
@@ -78,6 +217,6 @@ This section provides a comprehensive list of all Red Hat documentation and reso
 ---
 
 [#qa]
-== 5.3 Q&A
+== 5.4 Q&A
 
 Thank you for participating in this lab. We will now open the floor for questions.

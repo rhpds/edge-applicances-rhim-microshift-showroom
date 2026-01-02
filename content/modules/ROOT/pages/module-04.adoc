@@ -1,4 +1,4 @@
-= Module 4: Performing an Atomic Update 
+= Module 4: Safe Updates & Rollbacks
 :page-nav-title: Performing an Atomic Update
 
 == Learning objectives
@@ -12,33 +12,72 @@ By the end of this module, you will be able to:
 * Perform and verify manual rollbacks to previous system versions
 * Understand rollback capabilities and automatic rollback mechanisms of RHEL Image Mode
 
+[#know_section]
 [#atomic_updates]
-== 4.1 The Power of Atomic Updates and Rollbacks
-One of the biggest advantages of RHEL Image Mode is the **atomic update model**.  
-Each appliance keeps two bootable system states:
+== 4.1 Know: Solving Risky Updates with Atomic Operations
+
+=== Remember the Risky Updates Challenge?
+
+In the introduction, we discussed how ManufacturingCo faces a 15% update failure rate requiring on-site IT intervention, with recovery times of 2-4 hours. Traditional update methods can break systems in the field, and recovery may be difficult or impossible without on-site IT staff.
+
+**The Challenge:** How do we update appliances safely in the field, ensuring that if something goes wrong, we can instantly recover without sending IT staff to remote locations?
+
+=== Atomic Updates: The Solution
+
+One of the biggest advantages of RHEL Image Mode is the **atomic update model**. Each appliance keeps two bootable system states:
 
 * **A (current)** — the version currently running.
 * **B (next)** — the version that will be activated after the next reboot.
 
-When you apply an update, the system downloads a new image and stages it as the *next boot target*.  
-If something goes wrong, RHEL Image Mode can roll back instantly to the previous working state — no reinstall, no manual recovery.
+When you apply an update, the system downloads a new image and stages it as the *next boot target*. If something goes wrong, RHEL Image Mode can roll back instantly to the previous working state — no reinstall, no manual recovery.
+
+**Business Value:**
+* **Eliminate update failures:** A/B boot model ensures updates are staged before activation
+* **Instant recovery:** Roll back to previous working state in seconds, not hours
+* **No on-site IT required:** Recovery happens automatically via greenboot
+* **Confidence in field updates:** Updates don't break your running workloads
+
+=== How A/B Boot Solves Risky Updates
 
 This approach provides:
 
 * **Reliability:** Safe upgrades, always revertible.
 * **Speed:** OS + apps update in one transaction.
 * **Consistency:** Every node runs the same known-good image.
-* **Confidence:** Upgrades don’t break your running workloads.
+* **Confidence:** Upgrades don't break your running workloads.
 
 [NOTE]
 ====
-This “A/B boot” concept ensures your field-deployed appliances can be updated safely — even with power loss or network issues mid-upgrade.
+This "A/B boot" concept ensures your field-deployed appliances can be updated safely — even with power loss or network issues mid-upgrade. For ManufacturingCo, this means updates can be deployed to all 50 factory locations with confidence, knowing that any issues can be instantly reverted.
 ====
 
+=== Current State vs. Desired State
+
+**Current State (Traditional Approach):**
+* In-place package updates that can break systems
+* 15% failure rate requiring on-site IT intervention
+* 2-4 hour recovery times
+* Risk of data loss or system corruption
+* Extended downtime during failed updates
+
+**Desired State (RHEL Image Mode):**
+* Atomic image-based updates with A/B boot
+* <1% failure rate with automatic rollback
+* Instant recovery (seconds, not hours)
+* No on-site IT required for recovery
+* Zero downtime risk—previous version remains available
+
+[#show_section]
 [#build_4.20]
-== 4.2 Hands-On: Build the Updated Image 
-Now let's create an updated version of our appliance: **4.20**.  
-In a real-world scenario, this could include:
+== 4.2 Show: Build the Updated Image (4.20)
+
+=== Why We're Doing This
+
+This is how we create safe updates. By building a new image version (4.20) that includes updates and improvements, we're creating the foundation for an atomic update that can be instantly rolled back if needed.
+
+=== Build the Updated Image
+
+Now let's create an updated version of our appliance: **4.20**. In a real-world scenario, this could include:
 
 * A new version of WordPress or another app,
 * OS security updates, or
@@ -94,7 +133,7 @@ PULL
 time sudo bash -x build.sh 4.20 2>&1 | tee build-4.20.log
 ----
 
-Once the build completes, the resulting image and ISO will be available in the `/var/tmp/bootc-images/bootiso/` folder.
+Once the build completes, the resulting image will be available in your local container storage.
 
 [NOTE]
 ====
@@ -106,11 +145,26 @@ Each new version is simply another container image — giving you Git-like versi
 **Image Size Consideration:** Building 4.20 on top of 4.19 creates a layered image that includes all previous layers, which increases image size (you can verify this with `podman images`—4.20 is 7.59 GB vs. 4.19's 5.37 GB). In production, you can choose to build fresh images for each version instead of layering. For example, you could build 4.20 directly from the RHEL base or MicroShift base, rather than from 4.19. The `bootc switch` command works with both layered and fresh images—it simply changes the container image reference and preserves your system state (`/etc` and `/var`). Building fresh images can help manage image sizes, especially when you need to optimize for storage or bandwidth constraints.
 ====
 
-[#upgrade]
-== 4.3 Hands-On: Upgrade the Live System (Disconnected Workflow)
-Now that your updated image is ready, let's **upgrade the running appliance** safely using atomic image switching. This workflow demonstrates a **disconnected deployment** where the image is transferred directly to the target node without requiring a container registry.
+=== How This Solves the Problem
 
-=== Export the 4.20 image to a directory
+By building a new image version, we're creating a safe update that:
+
+* Can be tested and validated before deployment
+* Is staged as the "next boot" target without affecting the running system
+* Can be instantly rolled back if issues are detected
+* Provides a known-good state that matches exactly what was tested
+
+This eliminates the risky update problem for ManufacturingCo—updates are staged safely and can be reverted instantly if needed.
+
+[#upgrade]
+== 4.3 Show: Deploy Update Using Disconnected Workflow
+
+=== Why We're Doing This
+
+This solves both update safety AND disconnected operations. By exporting the image to a directory and transferring it directly to the target node, we demonstrate how ManufacturingCo can update appliances in disconnected factory locations without requiring registry access.
+
+=== Export the 4.20 Image to a Directory
+
 First, we'll export the 4.20 image from the local container storage to a directory format that can be transferred to the target node.
 
 . Create a directory for the exported image:
@@ -138,7 +192,8 @@ du -sh /var/tmp/microshift-bootc-4.20
 +
 The directory should be approximately 7-8 GB (matching the image size you saw with `podman images`).
 
-=== Transfer the image to the target node
+=== Transfer the Image to the Target Node
+
 Now we'll transfer the image directory to the target appliance. In this lab, we use SSH, but in production you could use USB sticks, external drives, or other offline transfer methods.
 
 . From the bastion host, transfer the image directory to the target VM:
@@ -153,7 +208,8 @@ scp -r /var/tmp/microshift-bootc-4.20/ redhat@<VM_IP_ADDRESS>:/var/tmp
 In production disconnected environments, you might transfer the image directory via USB stick, external drive, or other offline methods. The directory structure is portable and can be copied to any location on the target system.
 ====
 
-=== Switch to the new image on the target node
+=== Switch to the New Image on the Target Node
+
 Now we'll connect to the target node and use `bootc switch` with directory transport to stage the update.
 
 . Connect to the target VM via SSH:
@@ -188,6 +244,11 @@ sudo bootc switch --transport dir /var/tmp/microshift-bootc-4.20/
 The `--transport dir` option tells `bootc switch` to use a local directory instead of a container registry. This enables disconnected deployments where the image is transferred directly to the target system. The command will fetch and stage the image layers (approximately 7.6 GB), which may take a few minutes depending on disk I/O speed.
 ====
 
+[NOTE]
+====
+**Switching to Fresh Images:** The `bootc switch` command can switch to any container image reference—it does not require the target image to be based on the current image. You can switch from a layered image to a completely fresh image, or between any two images. The command preserves your system state (SSH keys, home directories, etc.) regardless of the image relationship. This flexibility allows you to choose the build strategy (layered vs. fresh) that best fits your needs for build speed, image size, or update frequency.
+====
+
 . Verify the image is staged:
 +
 [source,sh,role=execute]
@@ -198,12 +259,8 @@ sudo rpm-ostree status
 +
 You should see the 4.20 image listed as "Staged image" or "Queued for next boot", while the current 4.19 image remains as the "Booted image".
 
-[NOTE]
-====
-**Switching to Fresh Images:** The `bootc switch` command can switch to any container image reference—it does not require the target image to be based on the current image. You can switch from a layered image to a completely fresh image, or between any two images. The command preserves your system state (SSH keys, home directories, etc.) regardless of the image relationship. This flexibility allows you to choose the build strategy (layered vs. fresh) that best fits your needs for build speed, image size, or update frequency.
-====
+=== Apply and Reboot to Activate the Update
 
-=== Apply and reboot to activate the update
 . Apply the staged update and reboot:
 +
 [source,sh,role=execute]
@@ -214,7 +271,8 @@ sudo reboot
 +
 The system will reboot automatically. The connection will be closed.
 
-=== Verify the upgrade after reboot
+=== Verify the Upgrade After Reboot
+
 After the system reboots, reconnect and verify the upgrade was successful.
 
 . Reconnect to the target VM via SSH:
@@ -233,7 +291,7 @@ When prompted, enter the password: `redhat02`
 sudo bootc status
 sudo rpm-ostree status
 ----
-
++
 You should see the **4.20 image** (dir:/var/tmp/microshift-bootc-4.20/) as the active deployment and **4.19** available as a rollback target.
 
 . Verify MicroShift has been upgraded:
@@ -270,68 +328,26 @@ You can also use `sudo greenboot status` to check the greenboot status. If Green
 That's what makes RHEL Image Mode "atomic and safe by design". For more information on managing updates, see link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/using_image_mode_for_rhel_to_build_deploy_and_manage_operating_systems/index#managing-bootc-updates_using-image-mode-for-rhel[Managing bootc updates].
 ====
 
-=== Validation checkpoint: Upgrade verification
-After the system reboots, verify the upgrade was successful:
+=== How This Solves the Problem
 
-. Confirm 4.20 is now the active deployment:
-+
-[source,sh,role=execute]
-----
-sudo bootc status
-----
-+
-The active deployment should show `dir:/var/tmp/microshift-bootc-4.20/` as the booted image.
+By using directory transport for disconnected updates, we've demonstrated that:
 
-. Verify MicroShift version was upgraded:
-+
-[source,sh,role=execute]
-----
-microshift version
-----
-+
-Should show MicroShift Version: 4.20.0 (upgraded from 4.19.7).
+* Updates can be deployed to disconnected locations (no registry access required)
+* Updates are staged safely (A/B boot model ensures current system isn't affected)
+* Automatic rollback is available (greenboot monitors and rolls back on failure)
+* This solves both the risky updates challenge AND the disconnected operations challenge
 
-. Verify greenboot health check passed:
-+
-[source,sh,role=execute]
-----
-sudo greenboot status
-----
-
-. Check that MicroShift is still running:
-+
-[source,sh,role=execute]
-----
-oc get nodes
-oc get pods -A
-----
-
-. Verify rollback target is available:
-+
-[source,sh,role=execute]
-----
-sudo bootc status | grep -A 5 "rollback"
-----
-
-[IMPORTANT]
-====
-**Expected results:**
-
-* `bootc status` should show 4.20 (dir:/var/tmp/microshift-bootc-4.20/) as the active deployment
-* `microshift version` should show 4.20.0
-* `greenboot status` should show "GREEN" indicating health checks passed
-* MicroShift node should be in "Ready" state
-* Application pods should still be running
-* Previous 4.19 image should be available as a rollback target
-
-If greenboot shows "RED" or MicroShift is not running, the system should automatically roll back. You can manually roll back using `sudo bootc rollback` if needed.
-====
+For ManufacturingCo, this means they can update all 50 factory locations safely, even those with no network connectivity, with confidence that any issues will be automatically reverted.
 
 [#rollback]
-== 4.4 Hands-On: Exploring Rollbacks
-One of the key features of RHEL Image Mode is the ability to instantly roll back to a previous working state. The A/B boot model keeps both the current and previous images available, allowing you to revert changes if needed.
+== 4.4 Show: Demonstrate Rollback Capability
 
-=== Check rollback availability
+=== Why We're Doing This
+
+This is the safety net that eliminates update risk. By demonstrating instant rollback, we show how ManufacturingCo can recover from any update issue in seconds, without sending IT staff to remote locations.
+
+=== Check Rollback Availability
+
 Before performing a rollback, verify that a rollback target is available:
 
 . Check the current bootc status:
@@ -351,7 +367,8 @@ You should see:
 The rollback image is automatically preserved from the previous deployment. This is part of the A/B boot model—each update keeps the previous version as a rollback target.
 ====
 
-=== Perform a manual rollback
+=== Perform a Manual Rollback
+
 Now let's demonstrate a manual rollback to the previous version:
 
 . Initiate the rollback:
@@ -372,7 +389,8 @@ sudo systemctl reboot
 +
 The system will reboot automatically. The connection will be closed.
 
-=== Verify the rollback
+=== Verify the Rollback
+
 After the system reboots, reconnect and verify the rollback was successful:
 
 . Reconnect to the target VM via SSH:
@@ -424,11 +442,137 @@ All pods should still be running. The rollback preserves your application state.
 * **Bidirectional**: You can roll back and roll forward between any available deployments
 * **Automatic rollback**: If greenboot detects a failure, it automatically rolls back without manual intervention
 
-This demonstrates the reliability and safety of RHEL Image Mode's atomic update model.
+This demonstrates the reliability and safety of RHEL Image Mode's atomic update model. For ManufacturingCo, this means they can update appliances with confidence, knowing that any issues can be instantly reverted without on-site IT intervention.
 ====
 
+=== How This Solves the Problem
+
+By demonstrating instant rollback, we've proven that:
+
+* Update failures can be recovered instantly (seconds, not hours)
+* No on-site IT is required for recovery (automatic or manual rollback)
+* System state is preserved (no data loss or configuration loss)
+* Applications continue running (no downtime during rollback)
+
+This eliminates the risky updates challenge for ManufacturingCo—they can update all 50 factory locations with confidence, knowing that any issues can be instantly reverted.
+
+[#validation]
+== 4.5 Validation: Update and Rollback Verified
+
+=== Comprehensive Verification
+
+After performing the update and rollback, verify that both operations were successful:
+
+. Confirm 4.20 was successfully deployed (before rollback):
++
+[source,sh,role=execute]
+----
+sudo bootc status
+----
++
+The active deployment should show `dir:/var/tmp/microshift-bootc-4.20/` as the booted image (if you haven't rolled back yet).
+
+. Verify MicroShift version was upgraded:
++
+[source,sh,role=execute]
+----
+microshift version
+----
++
+Should show MicroShift Version: 4.20.0 (upgraded from 4.19.7).
+
+. Verify greenboot health check passed:
++
+[source,sh,role=execute]
+----
+sudo greenboot status
+----
+
+. Check that MicroShift is still running:
++
+[source,sh,role=execute]
+----
+oc get nodes
+oc get pods -A
+----
+
+. Verify rollback target is available:
++
+[source,sh,role=execute]
+----
+sudo bootc status | grep -A 5 "rollback"
+----
+
+. After rollback, verify system returned to 4.19:
++
+[source,sh,role=execute]
+----
+sudo bootc status
+microshift version
+oc get pods -A
+----
+
+=== Expected Results
+
+[IMPORTANT]
+====
+**Expected results:**
+
+* `bootc status` should show 4.20 (dir:/var/tmp/microshift-bootc-4.20/) as the active deployment (before rollback)
+* `microshift version` should show 4.20.0
+* `greenboot status` should show "GREEN" indicating health checks passed
+* MicroShift node should be in "Ready" state
+* Application pods should still be running
+* Previous 4.19 image should be available as a rollback target
+* After rollback, system should return to 4.19 with all applications still running
+
+If greenboot shows "RED" or MicroShift is not running, the system should automatically roll back. You can manually roll back using `sudo bootc rollback` if needed.
+====
+
+=== Validation Checklist
+
+□ 4.20 image was successfully staged and deployed  
+□ MicroShift upgraded to 4.20.0  
+□ Greenboot health checks passed  
+□ Applications continued running after update  
+□ Rollback target (4.19) was available  
+□ Rollback was successful and instant  
+□ System returned to 4.19 with all applications running  
+□ No on-site IT intervention was required
+
+=== How This Solves the Problem
+
+By verifying successful update and rollback, we've confirmed that:
+
+* **Risky updates challenge is solved:** Updates are staged safely and can be instantly reverted
+* **No on-site IT required:** Automatic rollback via greenboot eliminates the need for field support
+* **Instant recovery:** Rollback happens in seconds, not hours
+* **Zero downtime risk:** Previous version remains available as safety net
+
+For ManufacturingCo, this means they've eliminated the 15% update failure rate and 2-4 hour recovery times. Updates can now be deployed with confidence, knowing that any issues can be instantly reverted.
+
 [#delta_updates]
-== 4.5 Experimental: Delta Updates
+== 4.6 Know: Experimental: Delta Updates for Low-Bandwidth
+
+=== For Bandwidth-Constrained Environments
+
+When edge nodes have reliable connectivity to a container registry, they can benefit from **registry-based delta transfers**—the registry and container runtime can efficiently transfer only the changed layers between image versions. However, many edge deployments face constraints that make registry-based updates impractical:
+
+* **No registry access:** Air-gapped or isolated edge locations cannot reach centralized registries
+* **Poor connectivity:** Intermittent, low-bandwidth, or unreliable network connections make registry pulls unreliable
+* **Security restrictions:** Network policies may prevent direct registry access from edge locations
+* **Cost concerns:** Satellite or cellular connectivity makes large transfers expensive
+
+**File-based delta updates** solve this by allowing you to:
+* Generate deltas in a development environment with good connectivity
+* Transfer the compact delta file via USB, local network, or other offline methods
+* Apply the delta directly on the target system without any registry dependency
+
+**Example Impact:**
+* Full image: 7.6 GB
+* Delta file: ~200-400 MB (typically 80-95% reduction)
+* Transfer method: USB drive, local network, or other offline transport
+* No registry required: Works completely offline
 
 === Optimizing Images for Efficient Transfers
 
@@ -439,29 +583,8 @@ Before discussing when to use delta updates, it's worth noting that you can opti
 **Image Optimization vs. Delta Updates:** Image rechunking optimizes the structure of a single image for better registry-based layer reuse. Delta updates create compact files representing differences between versions for offline transfer. Both techniques help reduce transfer sizes, but serve different scenarios.
 ====
 
-=== Why File-Based Delta Updates?
-
-When edge nodes have reliable connectivity to a container registry, they can benefit from **registry-based delta transfers**—the registry and container runtime can efficiently transfer only the changed layers between image versions. However, many edge deployments face constraints that make registry-based updates impractical:
-
-* **No registry access:** Air-gapped or isolated edge locations cannot reach centralized registries
-* **Poor connectivity:** Intermittent, low-bandwidth, or unreliable network connections make registry pulls unreliable
-* **Security restrictions:** Network policies may prevent direct registry access from edge locations
-* **Cost concerns:** Satellite or cellular connectivity makes large transfers expensive
-
-**File-based delta updates** solve this by allowing you to:
-
-* Generate deltas in a development environment with good connectivity
-* Transfer the compact delta file via USB, local network, or other offline methods
-* Apply the delta directly on the target system without any registry dependency
-
-**Example Impact:**
-
-* Full image: 7.6 GB
-* Delta file: ~200-400 MB (typically 80-95% reduction)
-* Transfer method: USB drive, local network, or other offline transport
-* No registry required: Works completely offline
-
 === How File-Based Delta Updates Work
+
 File-based delta updates create a compact, portable file representing only the changes between two bootc images (e.g., 4.19 → 4.20). The workflow is:
 
 * **Generate:** Create the delta file in a development environment with registry access
@@ -471,6 +594,7 @@ File-based delta updates create a compact, portable file representing only the c
 The delta contains only the modified files and metadata needed to reconstruct the new image from the existing one. This enables updates in environments where registry-based delta transfers are not possible.
 
 === Current Status: Experimental
+
 Delta updates for bootc are currently **experimental** and under active development. Red Hat is exploring multiple approaches:
 
 * **OCI-level deltas:** Tools like `tar-diff` that work with container images
@@ -482,6 +606,7 @@ Delta updates for bootc are currently **experimental** and under active developm
 ====
 
 === Community Tools and Approaches
+
 While native bootc delta support is in development, you can experiment with:
 
 * **tar-diff/tar-patch:** Open-source utility for generating binary patches between container image layers
@@ -517,6 +642,7 @@ File-based deltas are particularly valuable when you need the efficiency of delt
 ====
 
 === Future Direction
+
 Red Hat is actively working on native delta update support (see link:https://issues.redhat.com/browse/RHELBU-3333[RHELBU-3333]). The goal is to provide:
 
 * Unified tooling that works with standard container formats
@@ -526,13 +652,6 @@ Red Hat is actively working on native delta update support (see link:https://iss
 
 When available, delta updates will become a first-class feature for edge appliance management.
 
+---
 
-[#summary]
-== 4.6 Summary
-You’ve just experienced the key differentiator of Image Mode:
-
-* One-command upgrades with instant rollback.  
-* Predictable, tested states across your entire fleet.  
-* Optional support for smaller delta-based updates.  
-
-Next: xref:module-05.adoc[Module 5: Troubleshooting & Advanced Topics]
+**Next:** Proceed to xref:module-05.adoc[Module 5: Business Outcomes & Resources] to see how all these capabilities connect to solving customer problems.
