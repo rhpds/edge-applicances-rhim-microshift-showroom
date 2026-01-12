@@ -613,4 +613,3 @@ MicroShift runs this container using the **embedded image**, not pulling from Do
 
 ---
 
-**Next:** Proceed to xref:module-04.adoc[Module 4: Safe Updates & Rollbacks] to learn how to update appliances safely with atomic updates and instant rollback capability.
