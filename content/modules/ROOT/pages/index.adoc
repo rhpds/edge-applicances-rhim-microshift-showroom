@@ -14,7 +14,7 @@ These appliances must:
 
 * Operate reliably in harsh industrial environments
 * Function in disconnected or bandwidth-constrained networks
-* Support cloud-native applications (MicroShift) for modern workloads
+* Support cloud-native applications for modern workloads
 * Update safely without disrupting production
 * Maintain consistency across all 50 locations
 
@@ -25,6 +25,8 @@ These appliances must:
 * *Configuration drift:* ~30% diverge from their intended state within 6 months
 * *Recovery time:* 2–4 hours for failed updates
 * *Security patches:* Applied inconsistently due to limited or no connectivity
+
+image::ManufacturingCo-challenges.jpg[ManufacturingCo-challenges.jpg,100%,100%]
 
 === The Challenge
 
@@ -80,7 +82,7 @@ Many edge sites lack reliable connectivity—or any connection at all.
 Edge hardware is small, rugged, and cost-sensitive.
 
 ==== The Impact
-* Typical footprint: 1 CPU + 2 GB RAM
+* Typical footprint: 2 CPU + 2 GB RAM
 * Resource-heavy platforms don’t fit
 * Full Kubernetes clusters overwhelm devices
 * Higher hardware costs if footprint isn’t optimized
@@ -95,8 +97,6 @@ Managing dozens—or hundreds—of edge sites multiplies every operational issue
 * Version sprawl across OS and applications
 * Build and config inconsistency between sites
 * Fleet operations become manual and reactive
-
-image::challenges.jpg[challenges,100%,100%]
 
 [#solution]
 == The Solution: RHEL Image Mode + MicroShift

@@ -203,11 +203,18 @@ mkdir -p /var/tmp/microshift-bootc-4.20
 sudo skopeo copy containers-storage:localhost/microshift-bootc-embeeded:4.20 dir:/var/tmp/microshift-bootc-4.20
 ----
 
-. Check size (~7–8GB):
+. Pack (tar) the directory:
 +
 [source,sh,role=execute]
 ----
-du -sh /var/tmp/microshift-bootc-4.20
+cd /var/tmp/; time tar cvf microshift-bootc-4.20.tar microshift-bootc-4.20/
+----
+
+. Check size (~11GB):
++
+[source,sh,role=execute]
+----
+du -sh /var/tmp/microshift-bootc-4.20.tar
 ----
 
 === Transfer to the Edge Node
@@ -216,7 +223,7 @@ du -sh /var/tmp/microshift-bootc-4.20
 +
 [source,sh,role=execute]
 ----
-scp -r /var/tmp/microshift-bootc-4.20/ redhat@<VM_IP_ADDRESS>:/var/tmp
+scp /var/tmp/microshift-bootc-4.20.tar redhat@<VM_IP_ADDRESS>:/var/tmp
 ----
 
 [NOTE]
@@ -238,6 +245,13 @@ ssh redhat@<VM_IP_ADDRESS>
 [source,sh,role=execute]
 ----
 sudo bootc status
+----
+
+. Unpack (un-tar) the directory:
++
+[source,sh,role=execute]
+----
+cd /var/tmp/; time tar -xvf microshift-bootc-4.20.tar
 ----
 
 . Switch to the locally transferred 4.20:
