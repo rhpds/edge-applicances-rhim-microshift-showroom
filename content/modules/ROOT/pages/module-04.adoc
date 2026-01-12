@@ -276,7 +276,6 @@ sudo rpm-ostree status
 [source,sh,role=execute]
 ----
 sudo bootc upgrade --apply
-sudo reboot
 ----
 
 Reconnect after boot completes.
