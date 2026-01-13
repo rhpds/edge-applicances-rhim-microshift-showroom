@@ -112,17 +112,11 @@ This provides:
 
 * **Consistency:** Every appliance runs the same bootc image  
 
-image::manage-fleet.jpg[manage-fleet,100%,100%]
-
 * **Reliability:** Updates are transactional with instant rollback  
-
-image::updates.jpg[updates-workflow,100%,100%]
 
 * **Simplicity:** Same tooling used for application development (Containerfiles, registries, CI/CD)
 
 * **Disconnected Operation:** Images embed OS + MicroShift + apps → no runtime pulls  
-
-image::disconnected.jpg[disconnected-workflow,100%,100%]
 
 * **Resource Optimization:** Minimal overhead, ideal for small footprint devices
 
@@ -200,13 +194,13 @@ All tools—including build utilities, MicroShift content, and demo applications
 
 === Lab Diagram
 
-image::lab-diagram.png[]
+image::disconnected.jpg[disconnected-workflow,100%,100%]
 
 === System Roles
 
 * **Container Build Host** –  
   The primary system where you will work.  
-  You will use podman, buildah, and skopeo to:
+  You will use podman and skopeo to:
   * Build bootc-based appliances  
   * Embed container images  
   * Push images to the registry (for connected workflows)

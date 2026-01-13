@@ -157,8 +157,6 @@ Build, test, ship, and manage appliances using standard container workflows.
 * Git-like versioning for the full stack
 * Simple fleet-wide lifecycle control
 
-image::use-cases.jpg[use-cases,100%,100%]
-
 [NOTE]
 ====
 Image Mode evolved from link:https://www.redhat.com/en/blog/red-hat-device-edge-rpm-ostree-updates[rpm-ostree^], a proven architecture for edge and appliance operations.  
@@ -176,18 +174,18 @@ By adopting RHEL Image Mode and MicroShift for edge appliances, customers achiev
 
 | Accelerate Time-to-Market
 | 6–8 week deployment cycles per location
-| Days to deploy new appliances or updates
-| **Reduce time-to-value by 75%, enable faster innovation cycles**
+| Days to build and deploy new appliances or updates
+| **Reduce time-to-value, enable faster innovation cycles**
 
 | Simplify Appliance Creation
 | Complex multi-step build processes, manual configuration
 | Single Containerfile defines entire appliance
-| **Reduce build complexity by 80%, enable version control for entire stack**
+| **Reduce build complexity, enable version control for entire stack**
 
 | Streamline Field Operations
 | Risky updates requiring on-site IT, 15% failure rate
 | Atomic updates with instant rollback, smartphone-like reliability
-| **Eliminate 90% of update-related downtime, reduce field support costs**
+| **Eliminate dramatically update-related downtime, reduce field support costs**
 
 | Enhance Security
 | Configuration drift, inconsistent patching, security vulnerabilities

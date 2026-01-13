@@ -73,24 +73,12 @@ Instead of multi-step “build → install → configure”, we now:
 
 EUS is chosen because edge deployments value:
 
-* Predictability over rapid change
-* Known-good versions for years
-* Fewer surprise updates
-* Reduced validation and testing load
+* Lifecycle sync and Hardened device-edge compatibility (Ensures stability within the Red Hat Device Edge validated link:https://docs.redhat.com/en/documentation/red_hat_device_edge/4/html/overview/device-edge-overview#device-edge-compatibility_device-edge-overview[matrix^]).
+* Extended support up to 36 months (When paired with link:https://access.redhat.com/support/policy/updates/openshift#eust3[OpenShift/MicroShift EUS Term 3^]).
+* Security fixes without minor version jumps (Critical for air-gapped or bandwidth-constrained edge nodes).
 
 For industrial systems, stability beats speed — making EUS the natural choice.
 
-=== Why Embed Repo Metadata (`redhat.repo`)
-
-During image builds, tools like `dnf` must resolve packages.
-
-Embedding repo metadata ensures:
-
-* Builds complete without external repo configuration
-* Reproducible builds across CI/CD pipelines
-* No dependency on host-side repo files later
-
-This is required for repeatable container-based OS builds.
 
 . View the base Containerfile:
 +
@@ -109,8 +97,6 @@ ARG VERSION_ID="9.6"
 
 ## Needed as bootc-image-builder requires a repo file to be present in the base image.
 ADD redhat.repo /etc/yum.repos.d/redhat.repo
-# workaround for this lab, as we didn't managed to push signatures for lvm operator and ubi images from registry.redhat.io 
-ADD policy.json /etc/containers/policy.json
 
 RUN dnf install -y --releasever="${VERSION_ID}" firewalld jq microshift microshift-release-info cockpit openscap-utils scap-security-guide && \
     systemctl enable microshift && \
@@ -154,6 +140,27 @@ EOF
 RUN systemctl enable microshift-make-rshared.service
 
 COPY wordpress /usr/lib/microshift/manifests.d/wordpress
+
+## Apply kernel tuning for CIS hardening compliance
+RUN cat > /etc/sysctl.d/99-cis-hardening.conf <<'EOF'
+# IPv6 Settings
+net.ipv6.conf.all.accept_ra = 0
+net.ipv6.conf.all.accept_redirects = 0
+net.ipv6.conf.default.accept_ra = 0
+net.ipv6.conf.default.accept_redirects = 0
+# IPv4 Settings
+net.ipv4.conf.all.log_martians = 1
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.all.secure_redirects = 0
+net.ipv4.conf.default.log_martians = 1
+net.ipv4.conf.default.secure_redirects = 0
+net.ipv4.ip_forward = 0
+# Ptrace Scope
+kernel.yama.ptrace_scope = 1
+EOF
+RUN echo "AllowUsers redhat" >> /etc/ssh/sshd_config
+# Run scan and hardening
+RUN oscap-im --profile xccdf_org.ssgproject.content_profile_cis /usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml
 ----
 ====
 
@@ -238,12 +245,6 @@ RUN skopeo copy --preserve-digests docker://image \
 
 MicroShift can now run workloads without a registry.
 
-=== Why `dir:` Transport?
-
-* Bundles multiple images
-* Filesystem-friendly, no registries needed
-* Preserves digests (critical for SHA-pinned references)
-
 === Helper Scripts Provided
 
 * `embed_image.sh` — pulls container images into `/usr/lib`
@@ -275,9 +276,6 @@ ENV IMAGE_LIST_FILE=${IMAGE_STORAGE_DIR}/image-list.txt
 # use to embed application images
 COPY ./embed_image.sh /usr/bin/
 COPY ./copy_embedded_images.sh /usr/bin/
-
-ENV IMAGE_STORAGE_DIR=/usr/lib/containers/storage
-ENV IMAGE_LIST_FILE=${IMAGE_STORAGE_DIR}/image-list.txt
 
 # Pull the container images into /usr/lib/containers/storage:
 # - Each image goes into a separate sub-directory
@@ -339,7 +337,7 @@ dnf config-manager \
         --set-enabled fast-datapath-for-rhel-9-$(uname -m)-rpms
 dnf config-manager --set-disabled rhocp-4.18-for-rhel-9-$(uname -m)-rpms --set-disabled rhocp-4.20-for-rhel-9-$(uname -m)-rpms
 cp /etc/yum.repos.d/redhat.repo /home/lab-user/bootc-embeeded-containers
-cp /etc/containers/policy.json /home/lab-user/bootc-embeeded-containers
+
 # Run podman build as root to allow for :z relabeling
 #
 # Mount the host subscription data
@@ -442,6 +440,7 @@ echo "#### Building a new bootc image with MicroShift and application Container 
 sudo podman build -t "${IMAGE_NAME}:${TAG}" \
     --volume /etc/rhsm:/etc/rhsm:ro,z \
     --volume /etc/pki/entitlement:/etc/pki/entitlement:ro,z \
+    --volume /etc/containers/registries.d/registry-5000.yaml:/etc/containers/registries.d/registry-5000.yaml:ro,z \
     --volume /etc/yum.repos.d:/etc/yum.repos.d:ro,z \
     --volume /etc/containers/registries.conf.d/99-mirrors.conf:/etc/containers/registries.conf.d/99-mirrors.conf:ro,z \
     --volume /etc/containers/policy.json:/etc/containers/policy.json:ro,z \
@@ -461,6 +460,7 @@ if [ "$TAG_LOWER" = "4.19" ]; then
        -v /var/tmp/bootc-images:/output \
        --volume /etc/rhsm:/etc/rhsm:ro \
        --volume /etc/pki/entitlement:/etc/pki/entitlement:ro \
+       --volume /etc/containers/registries.d/registry-5000.yaml:/etc/containers/registries.d/registry-5000.yaml:ro \
         registry.redhat.io/rhel9/bootc-image-builder:latest \
         --progress=verbose --local --type iso localhost/${IMAGE_NAME}:${TAG}
 
@@ -531,10 +531,10 @@ ls -lh /var/tmp/bootc-images/bootiso/*.iso || ls -lh _build/*.iso
 
 === Validation Checklist
 
-□ Base image `microshift-bootc:base` exists  
-□ Appliance image `microshift-bootc-embeeded:4.19` exists  
-□ ISO file exists and is several GB in size  
-□ Build logs show no errors
+* Base image `microshift-bootc:base` exists  
+* Appliance image `microshift-bootc-embeeded:4.19` exists  
+* ISO file exists and is several GB in size  
+* Build logs show no errors
 
 === What Happens Next
 

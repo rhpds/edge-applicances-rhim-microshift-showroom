@@ -146,62 +146,32 @@ This section provides a comprehensive list of all Red Hat documentation and reso
 
 === RHEL Image Mode (bootc) Documentation
 
-* **Using Image Mode for RHEL to build, deploy, and manage operating systems**
-+
-  * Main guide: link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/using_image_mode_for_rhel_to_build_deploy_and_manage_operating_systems/index[Using Image Mode for RHEL^]
-  * Building bootc images: link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/using_image_mode_for_rhel_to_build_deploy_and_manage_operating_systems/index#building-and-testing-the-rhel-bootable-container-images_using-image-mode-for-rhel-to-build-deploy-and-manage-operating-systems[Building bootc images^]
-  * Deploying bootc images: link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/using_image_mode_for_rhel_to_build_deploy_and_manage_operating_systems/index#deploying-the-rhel-bootc-images_using-image-mode-for-rhel-to-build-deploy-and-manage-operating-systems[Deploying bootc images^]
-  * Managing bootc updates: link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/using_image_mode_for_rhel_to_build_deploy_and_manage_operating_systems/index#managing-rhel-bootc-images[Managing bootc updates^]
+  * link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/using_image_mode_for_rhel_to_build_deploy_and_manage_operating_systems/index[Using Image Mode for RHEL^]
+  * link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/using_image_mode_for_rhel_to_build_deploy_and_manage_operating_systems/index#building-and-testing-the-rhel-bootable-container-images_using-image-mode-for-rhel-to-build-deploy-and-manage-operating-systems[Building bootc images^]
+  * link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/using_image_mode_for_rhel_to_build_deploy_and_manage_operating_systems/index#deploying-the-rhel-bootc-images_using-image-mode-for-rhel-to-build-deploy-and-manage-operating-systems[Deploying bootc images^]
+  * link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/using_image_mode_for_rhel_to_build_deploy_and_manage_operating_systems/index#managing-rhel-bootc-images[Managing bootc updates^]
 
 === Red Hat build of MicroShift Documentation
 
-* **Installing MicroShift with Image Mode for RHEL**
-+
-  * Building a bootc image with MicroShift: link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.19/html/installing_with_image_mode_for_rhel/installing-a-bootc-image-and-publishing-to-a-registry#microshift-install-bootc-build-image_microshift-install-bootc-image[Building a bootc image with MicroShift^]
-
-* **Configuring MicroShift**
-+
-  * MicroShift node access and kubeconfig: link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.19/html/configuring/microshift-node-access-kubeconfig[MicroShift node access and kubeconfig^]
-
-* **MicroShift Documentation (4.19)**
-+
-  * Full documentation: link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.19[Red Hat build of MicroShift 4.19 Documentation^]
-
-* **MicroShift Documentation (4.20)**
-+
-  * Full documentation: link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.20[Red Hat build of MicroShift 4.20 Documentation^]
+  * link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.19/html/installing_with_image_mode_for_rhel/installing-a-bootc-image-and-publishing-to-a-registry#microshift-install-bootc-build-image_microshift-install-bootc-image[Building a bootc image with MicroShift^]
+  * link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.19/html/configuring/microshift-node-access-kubeconfig[MicroShift node access and kubeconfig^]
+  * link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.19[Red Hat build of MicroShift 4.19 Documentation^]
+  * link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.20[Red Hat build of MicroShift 4.20 Documentation^]
 
 === Related Training and Resources
 
-* **LB1054 - Unleashing The Power of Image Mode for RHEL**
-+
-  * Prerequisite training: link:https://rhpds.github.io/showroom-lb1054-rhel-image-mode/modules/index.html[LB1054 Lab^]
-
-* **Red Hat Enterprise Linux for Edge**
-+
-  * Product page: link:https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux/edge[Red Hat Enterprise Linux for Edge^]
-
-* **Building and managing edge devices with RHEL for Edge**
-+
-  * Documentation: link:https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/building_and_managing_edge_devices_with_rhel_for_edge/index[Building and managing edge devices with RHEL for Edge^]
-
-* **Red Hat build of MicroShift**
-+
-  * Product page: link:https://www.redhat.com/en/topics/edge-computing/microshift[Red Hat build of MicroShift^]
-
-* **Red Hat OpenShift**
-+
-  * Product page: link:https://www.redhat.com/en/technologies/cloud-computing/openshift/edge-computing[Red Hat OpenShift for Edge Computing^]
-
-* **rpm-ostree and Device Edge**
-+
-  * Blog post: link:https://www.redhat.com/en/blog/red-hat-device-edge-rpm-ostree-updates[rpm-ostree updates for Red Hat Device Edge^]
+  * link:https://rhpds.github.io/showroom-lb1054-rhel-image-mode/modules/index.html[LB1054 Lab^]
+  * link:https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux/edge[Red Hat Enterprise Linux for Edge^]
+  * link:https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/building_and_managing_edge_devices_with_rhel_for_edge/index[Building and managing edge devices with RHEL for Edge^]
+  * link:https://www.redhat.com/en/topics/edge-computing/microshift[Red Hat build of MicroShift^]
+  * link:https://www.redhat.com/en/technologies/cloud-computing/openshift/edge-computing[Red Hat OpenShift for Edge Computing^]
+  * link:https://www.redhat.com/en/blog/red-hat-device-edge-rpm-ostree-updates[rpm-ostree updates for Red Hat Device Edge^]
 
 === Additional Resources
 
-* **Delta Updates (Experimental)**
-+
-  * tar-diff utility: link:https://github.com/containers/tar-diff[tar-diff on GitHub^]
+* **Delta Updates (Experimental)**: 
+    * link:https://github.com/containers/tar-diff[tar-diff on GitHub^]
+    * link:https://github.com/arthur-r-oliveira/bootc-embeeded-containers/blob/rhpds/delta-updates-experimental.md[github.com/arthur-r-oliveira/bootc-embeeded-containers^]
 
 [#qa]
 == 5.4 Q&A — Your Turn
