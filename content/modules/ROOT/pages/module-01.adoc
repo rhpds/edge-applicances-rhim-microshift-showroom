@@ -96,6 +96,7 @@ As introduced in the xref:index.adoc#solution[workshop overview], RHEL Image Mod
 | *Traditional State*
 
 * Manual or scripted OS build/configuration
+
 * Drift grows with every one-off patch
 * Updates are risky and slow to recover
 * Connectivity required for OS + registry pulls
