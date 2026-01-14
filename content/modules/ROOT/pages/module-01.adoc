@@ -141,21 +141,23 @@ With Image Mode, customers experience:
 
 === The Business Workflow
 
-**Traditional Appliance Lifecycle**
+[cols="1a,1a", options="header"]
+|===
+| Traditional Appliance Lifecycle | Image Mode Lifecycle
 
+|
 * OS deployed and configured manually
 * Apps installed separately
 * Version control is manual and error-prone
 * Updates are risky and often disruptive
 
-**Image Mode Lifecycle**
-
+|
 * Define OS + applications once
 * Build a bootable container image
 * Generate ISO/disk media
 * Deploy anywhere
 * Upgrade by replacing the image
-
+|===
 === The Technical Workflow
 
 A typical workflow looks like this:
