@@ -143,7 +143,7 @@ With Image Mode, customers experience:
 
 [cols="1a,1a", options="header"]
 |===
-| Traditional Appliance Lifecycle | Image Mode Lifecycle
+| Traditional Appliance Lifecycle | Image Mode (Technical Workflow)
 
 |
 * OS deployed and configured manually
@@ -152,11 +152,11 @@ With Image Mode, customers experience:
 * Updates are risky and often disruptive
 
 |
-* Define OS + applications once
-* Build a bootable container image
-* Generate ISO/disk media
-* Deploy anywhere
-* Upgrade by replacing the image
+1. *Describe:* Define appliance in a `Containerfile`
+2. *Build:* Create bootable image using `bootc`
+3. *Generate:* Produce bootable ISO/disk image
+4. *Deploy:* Install to VM or physical edge device
+5. *Update:* Push a new tagged image for atomic upgrade
 |===
 === The Technical Workflow
 
