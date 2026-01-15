@@ -123,11 +123,6 @@ By adopting RHEL Image Mode and MicroShift for edge appliances, customers achiev
 *Show:* Module 2 shows the Containerfile structure—it's straightforward.
 
 [.text-left]
-**Q:** "What's the business impact timeline? How quickly can we see results?" +
-**A:** Initial appliance build takes hours (not weeks). Updates can be deployed in minutes with instant rollback. Most customers see 50-75% reduction in deployment time within the first quarter. +
-*Show:* Module 4 demonstrates atomic updates in action.
-
-[.text-left]
 **Q:** "Can we still customize the OS and applications for different use cases?" +
 **A:** Yes, you build different Containerfiles for different use cases. The base OS is consistent, but you can layer on application-specific components. +
 *Show:* Module 2 shows how 4.19 extends the base image.
