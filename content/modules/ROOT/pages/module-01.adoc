@@ -4,7 +4,7 @@
 :source-highlighter: rouge
 :experimental:
 
-== Learning Objectives
+== Learning objectives
 By the end of this module, you will be able to:
 
 * Identify key edge computing challenges and how RHEL Image Mode addresses them
@@ -143,7 +143,7 @@ This lab includes a ready-made WordPress + MySQL demo workload and MicroShift ma
 ====
 
 === Lab Overview: Environment and Components
-You will interact with three core systems:
+You will interact with 3 core systems:
 
 1. **Container Build Host:** The primary system where you build bootc appliances and embed images using `podman`.
 2. **Container Registry:** Hosts bootc images to demonstrate connected and on-demand updates.
