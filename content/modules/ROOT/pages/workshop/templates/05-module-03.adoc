@@ -72,7 +72,7 @@ Deploy your {{ application type }} to {{ platform }}:
 ----
 
 // Screenshot showing the deployed application
-image::deployed-application.png[align="center",width=600,title="Successfully Deployed Application"]
+// image::deployed-application.png[align="center",width=600,title="Successfully Deployed Application"]
 
 == Part 2: {{ Scaling and availability topic }}
 
@@ -136,8 +136,8 @@ Configure scaling and high availability:
 ----
 
 // Side-by-side images showing before and after scaling
-image::before-scaling.png[align="left",width=300,title="Single Instance"]
-image::after-scaling.png[align="right",width=300,title="Multiple Instances"]
+// image::before-scaling.png[align="left",width=300,title="Single Instance"]
+// image::after-scaling.png[align="right",width=300,title="Multiple Instances"]
 
 == Part 3: {{ Monitoring and troubleshooting topic }}
 
@@ -204,9 +204,9 @@ for i in {1..100}; do {{ load command }} & done
 ----
 
 // Multiple monitoring screenshots in sequence
-image::step1-monitoring.png[align="left",width=250,title="Step 1: Baseline"]
-image::step2-monitoring.png[align="center",width=250,title="Step 2: Load Applied"]
-image::step3-monitoring.png[align="right",width=250,title="Step 3: Auto-scaled"]
+// image::step1-monitoring.png[align="left",width=250,title="Step 1: Baseline"]
+// image::step2-monitoring.png[align="center",width=250,title="Step 2: Load Applied"]
+// image::step3-monitoring.png[align="right",width=250,title="Step 3: Auto-scaled"]
 
 == Module 3 summary
 
