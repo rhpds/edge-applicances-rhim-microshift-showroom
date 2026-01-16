@@ -1,6 +1,6 @@
 ---
 site:
-  title: Building self-contained edge appliances with RHEL Image Mode & MicroShift
+  title: Building Self-contained Appliances with RHEL Image Mode and MicroShift
   url: https://rhpds.github.io/edge-applicances-rhim-microshift-showroom
   start_page: modules::index.adoc
 
