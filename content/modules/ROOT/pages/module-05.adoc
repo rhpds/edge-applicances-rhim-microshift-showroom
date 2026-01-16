@@ -22,19 +22,19 @@ Throughout this workshop, we demonstrated how **RHEL Image Mode + MicroShift** s
 |===
 
 [#quantified_outcomes]
-== 5.2 Know: Quantified Business Outcomes
+== 5.2 Know: Business Outcomes
 
-The transition to Image Mode transforms edge operations from "pets" to "cattle." Below are the measurable improvements realized by ManufacturingCo.
+The transition to Image Mode transforms edge operations from "pets" to "cattle." Below are the key improvements that organizations typically realize when adopting Image Mode for edge appliances.
 
 === Operational Efficiency Matrix
 
 [cols="1,1a,1a,1", options="header"]
 |===
 | Metric | Traditional Method | Image Mode Method | Impact
-| **Deployment Speed** | 6–8 weeks per location | Days | **75% Faster**
-| **Build Complexity** | Manual, bespoke scripts | Versioned `Containerfile` | **80% Simpler**
-| **Update Stability** | 15% failure rate | <1% failure rate | **90% Less Risk**
-| **System Drift** | 30% drift over 6 months | **0% Drift** (Immutable) | **100% Consistent**
+| **Deployment Speed** | 6–8 weeks per location | Days | **Significantly faster deployment cycles**
+| **Build Complexity** | Manual, bespoke scripts | Versioned `Containerfile` | **Simplified build process with version control**
+| **Update Stability** | 15% failure rate | <1% failure rate | **Dramatically reduced update failures**
+| **System Drift** | 30% drift over 6 months | **0% Drift** (Immutable) | **Eliminates configuration drift**
 |===
 
 
