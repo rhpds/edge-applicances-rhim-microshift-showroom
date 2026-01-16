@@ -4,13 +4,13 @@
 ** xref:module-01.adoc#edge_challenges[Know: Understanding Edge Appliance Challenges]
 ** xref:module-01.adoc#bootc_solution[Know: How RHEL Image Mode Addresses These Challenges]
 ** xref:module-01.adoc#workflow[Know: The Build-Deploy-Manage Workflow]
-** xref:module-01.adoc#setup[Show: Lab Environment Setup]
+** xref:module-01.adoc#_lab_overview_environment_and_components[Show: Lab Environment Setup]
 ** xref:module-01.adoc#validation[Validation: Environment Ready]
 
 * xref:module-02.adoc#know_section[2. Building Self-Contained Appliances]
 ** xref:module-02.adoc#containerfile[Know: Building Self-Contained Appliances]
 ** xref:module-02.adoc#physically_bound[Know: Physically-Bound Images for Disconnected Operations]
-** xref:module-02.adoc#build_base[Show: Build the Base Image]
+** xref:module-02.adoc#show_section[Show: Build the Base Image]
 ** xref:module-02.adoc#build_appliance[Show: Build the Self-Contained Appliance (4.19)]
 ** xref:module-02.adoc#validation[Validation: Appliance Ready for Deployment]
 

@@ -75,7 +75,6 @@ This section provides a comprehensive list of all Red Hat documentation and reso
 === Additional Resources
 * **Delta Updates (Experimental)**: 
     * link:https://github.com/containers/tar-diff[tar-diff on GitHub^]
-    * link:https://github.com/arthur-r-oliveira/bootc-embedded-containers/blob/rhpds/delta-updates-experimental.md[github.com/arthur-r-oliveira/bootc-embedded-containers^]
 
 ---
 

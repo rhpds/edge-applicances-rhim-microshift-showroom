@@ -142,7 +142,7 @@ We are simulating the **real edge**: no registry, no internet, and no onsite IT.
 [source,sh,role=execute]
 ----
 mkdir -p /var/tmp/microshift-bootc-4.20
-sudo skopeo copy containers-storage:localhost/microshift-bootc-embedded:4.20 dir:/var/tmp/microshift-bootc-4.20
+sudo skopeo copy containers-storage:localhost/microshift-bootc-embeeded:4.20 dir:/var/tmp/microshift-bootc-4.20
 ----
 
 . Pack and Check Size (~11GB):
