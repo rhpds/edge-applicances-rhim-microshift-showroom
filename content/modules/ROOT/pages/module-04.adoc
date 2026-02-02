@@ -67,6 +67,11 @@ RHEL Image Mode replaces package updates with **atomic image deployment**. Each 
 === Why We're Doing This
 To demonstrate a **real update workflow**, we build version 4.20. In production, this would include security fixes, MicroShift payloads, or new app workloads.
 
+[NOTE]
+====
+Exit from the Bootc VM using Ctrl+D or ENTER "exit" in the terminal to exit the vm and go back to bastion server.
+====
+
 === View the Updated Containerfile
 . Inspect the `Containerfile.4.20`:
 +
