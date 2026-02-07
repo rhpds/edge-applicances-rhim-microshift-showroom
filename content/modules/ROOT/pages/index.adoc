@@ -20,7 +20,7 @@ ManufacturingCo's current state illustrates the challenges many organizations fa
 * *Recovery time:* 2–4 hours for failed updates
 * *Security patches:* Applied inconsistently due to limited or no connectivity
 
-image::ManufacturingCo-challenges.jpg[ManufacturingCo challenges,100%,100%]
+image::bootc-solution.png[ManufacturingCo challenges,100%,100%]
 
 [NOTE]
 ====
