@@ -8,14 +8,14 @@
 [#recap]
 == 5.1 Know: Connecting the Dots — Problem → Capability → Outcome
 
-Throughout this workshop, we demonstrated how **RHEL Image Mode + MicroShift** solve ManufacturingCo's real-world problems end-to-end.
+Throughout this workshop, we demonstrated how **bootc + MicroShift** solve ManufacturingCo's real-world problems end-to-end.
 
 === Workshop Journey Summary
 
 [cols="1,2,2", options="header"]
 |===
 | Module | Capability Demonstrated | Business Outcome
-| **1. Challenges** | RHEL Image Mode Architecture | Shift from mutable packages to **immutable images**.
+| **1. Challenges** | bootc Architecture | Shift from mutable packages to **immutable images**.
 | **2. Building** | Physically-bound bootable images | Appliances that are **fully self-contained** for air-gapped sites.
 | **3. Deploying** | ISO-based offline deployment | Reliable, **reproducible installation** without registry access.
 | **4. Updating** | Atomic A/B updates & Greenboot | Safe updates with **instant rollback**, eliminating field risk.
@@ -24,13 +24,13 @@ Throughout this workshop, we demonstrated how **RHEL Image Mode + MicroShift** s
 [#quantified_outcomes]
 == 5.2 Know: Business Outcomes
 
-The transition to Image Mode transforms edge operations from "pets" to "cattle." Below are the key improvements that organizations typically realize when adopting Image Mode for edge appliances.
+The transition to bootc transforms edge operations from "pets" to "cattle." Below are the key improvements that organizations typically realize when adopting bootc for edge appliances.
 
 === Operational Efficiency Matrix
 
 [cols="1,1a,1a,1", options="header"]
 |===
-| Metric | Traditional Method | Image Mode Method | Impact
+| Metric | Traditional Method | bootc Method | Impact
 | **Deployment Speed** | 6–8 weeks per location | Days | **Significantly faster deployment cycles**
 | **Build Complexity** | Manual, bespoke scripts | Versioned `Containerfile` | **Simplified build process with version control**
 | **Update Stability** | 15% failure rate | <1% failure rate | **Dramatically reduced update failures**
@@ -50,27 +50,21 @@ The transition to Image Mode transforms edge operations from "pets" to "cattle."
 [#resources]
 == 5.3 Resources & Documentation
 
-This section provides a comprehensive list of all Red Hat documentation and resources referenced throughout this workshop.
+This section provides a comprehensive list of upstream documentation and resources referenced throughout this workshop.
 
-=== RHEL Image Mode (bootc) Documentation
-* link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/using_image_mode_for_rhel_to_build_deploy_and_manage_operating_systems/index[Using Image Mode for RHEL^]
-* link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/using_image_mode_for_rhel_to_build_deploy_and_manage_operating_systems/index#building-and-testing-the-rhel-bootable-container-images_using-image-mode-for-rhel-to-build-deploy-and-manage-operating-systems[Building bootc images^]
-* link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/using_image_mode_for_rhel_to_build_deploy_and_manage_operating_systems/index#deploying-the-rhel-bootc-images_using-image-mode-for-rhel-to-build-deploy-and-manage-operating-systems[Deploying bootc images^]
-* link:https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/using_image_mode_for_rhel_to_build_deploy_and_manage_operating_systems/index#managing-rhel-bootc-images[Managing bootc updates^]
+=== bootc Documentation
+* link:https://github.com/containers/bootc[bootc project repository^]
+* link:https://github.com/osbuild/bootc-image-builder[bootc-image-builder^]
+* link:https://gitlab.com/fedora/bootc/examples[bootc examples^]
 
-=== Red Hat build of MicroShift Documentation
-* link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.19/html/installing_with_image_mode_for_rhel/installing-a-bootc-image-and-publishing-to-a-registry#microshift-install-bootc-build-image_microshift-install-bootc-image[Building a bootc image with MicroShift^]
-* link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.19/html/configuring/microshift-node-access-kubeconfig[MicroShift node access and kubeconfig^]
-* link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.19[Red Hat build of MicroShift 4.19 Documentation^]
-* link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.20[Red Hat build of MicroShift 4.20 Documentation^]
+=== MicroShift Documentation
+* link:https://github.com/openshift/microshift[MicroShift project repository^]
+* link:https://github.com/openshift/microshift/tree/main/docs[MicroShift documentation^]
 
 === Related Training and Resources
-* link:https://rhpds.github.io/showroom-lb1054-rhel-image-mode/modules/index.html[LB1054 Lab^]
-* link:https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux/edge[Red Hat Enterprise Linux for Edge^]
-* link:https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/building_and_managing_edge_devices_with_rhel_for_edge/index[Building and managing edge devices with RHEL for Edge^]
-* link:https://www.redhat.com/en/topics/edge-computing/microshift[Red Hat build of MicroShift^]
-* link:https://www.redhat.com/en/technologies/cloud-computing/openshift/edge-computing[Red Hat OpenShift for Edge Computing^]
-* link:https://www.redhat.com/en/blog/red-hat-device-edge-rpm-ostree-updates[rpm-ostree updates for Red Hat Device Edge^]
+* link:https://www.centos.org/[CentOS Stream^]
+* link:https://coreos.github.io/rpm-ostree/[rpm-ostree documentation^]
+* link:https://quay.io/organization/centos-bootc[CentOS bootc container images (Quay)^]
 
 === Additional Resources
 * **Delta Updates (Experimental)**: 

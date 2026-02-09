@@ -1,9 +1,9 @@
-= Building self-contained edge appliances with RHEL Image Mode & MicroShift
+= Building self-contained edge appliances with Bootc & MicroShift
 
-Welcome to a hands-on lab focused on building real cloud-native appliances—designed for engineers, architects, consultants, and sales teams who build, sell, position, or operate solutions at the edge.
+Welcome to a hands-on lab that shows how to build a real edge appliance. It is written for mixed audiences, including people who are new to bootc or MicroShift.
 
-Our previous lab, link:https://rhpds.github.io/showroom-lb1054-rhel-image-mode/modules/index.html[LB1054 – Unleashing The Power of Image Mode for RHEL^], introduced treating the OS as an image.
-This lab takes the next step: **building a production-grade appliance** that addresses real customer challenges such as disconnected operations, risky updates, inconsistent lifecycle management, and resource-limited deployments.
+This lab takes the next step: **building a working appliance** that handles common edge problems like poor connectivity, risky updates, inconsistent system state, and limited hardware resources.
+
 
 [#problem]
 == The challenge: Edge appliances are hard to operate at scale
@@ -20,7 +20,7 @@ ManufacturingCo's current state illustrates the challenges many organizations fa
 * *Recovery time:* 2–4 hours for failed updates
 * *Security patches:* Applied inconsistently due to limited or no connectivity
 
-image::bootc-solution.png[ManufacturingCo challenges,100%,100%]
+image::ManufacturingCo-challenges.jpg[ManufacturingCo challenges,100%,100%]
 
 [NOTE]
 ====
@@ -43,34 +43,34 @@ ManufacturingCo needs a repeatable way to build, deploy, update, and operate sel
 For detailed explanations of these challenges, see xref:module-01.adoc#edge_challenges[Module 1: Understanding Edge Appliance Challenges].
 
 [#solution]
-== The solution: RHEL Image Mode + MicroShift
+== The solution: bootc + MicroShift
 
-**RHEL Image Mode**, powered by `bootc`, eliminates many of these operational risks by treating the *entire* OS as a **versioned, immutable container image**.
+**bootc** delivers the *entire* OS as a **versioned container image**. Updates replace the whole OS image instead of changing files in place.
 
-Paired with **Red Hat build of MicroShift**, you get a lightweight Kubernetes platform that delivers a consistent, cloud-native experience on small-footprint edge devices.
+**MicroShift** is a smaller Kubernetes that runs well on edge devices. Together, bootc + MicroShift give you a consistent way to run apps on small hardware.
 
 Together, they create a **self-contained, reliable edge appliance platform** that addresses the core challenges:
 
-* **Configuration drift** → Eliminated through immutable, versioned images
-* **Risky updates** → Solved with atomic A/B boot and instant rollback
-* **Disconnected operations** → Enabled by embedding OS, MicroShift, and applications directly into bootable images
-* **Resource constraints** → Addressed with MicroShift, a lightweight Kubernetes platform optimized for small-footprint devices
-* **Lifecycle management** → Simplified through standard container workflows and Git-like versioning
+* **Configuration drift** → Reduced because systems come from the same versioned image
+* **Risky updates** → Safer with A/B boot (two slots) and quick rollback
+* **Disconnected operations** → Works offline by embedding OS, MicroShift, and apps in the image
+* **Resource constraints** → Addressed with MicroShift, which is lightweight for small devices
+* **Lifecycle management** → Simpler versioning and repeatable builds
 
-For detailed explanations of how RHEL Image Mode addresses these challenges, see xref:module-01.adoc#bootc_solution[Module 1: How RHEL Image Mode Addresses These Challenges].
+For detailed explanations of how bootc addresses these challenges, see xref:module-01.adoc#bootc_solution[Module 1: How bootc Addresses These Challenges].
 
-image::rhim-solution.jpg[RHEL Image Mode,100%,100%]
+image::bootc-solution.png[bootc image-based workflow,100%,100%]
 
 [NOTE]
 ====
-Image Mode evolved from link:https://www.redhat.com/en/blog/red-hat-device-edge-rpm-ostree-updates[rpm-ostree^], a proven architecture for edge and appliance operations.
-This lab builds on link:https://rhpds.github.io/showroom-lb1054-rhel-image-mode/modules/index.html[LB1054 – Unleashing The Power of Image Mode for RHEL^], extending it to embed MicroShift and applications into the OS image—creating fully self-contained appliances that function even in disconnected environments.
+bootc builds on the rpm-ostree heritage for image-based OS delivery, a proven architecture for edge and appliance operations.
+This lab extends that approach to embed MicroShift and applications into the OS image—creating fully self-contained appliances that function even in disconnected environments.
 ====
 
 [#benefits]
 == Benefits to the customer
 
-By adopting RHEL Image Mode and MicroShift for edge appliances, customers achieve:
+By adopting bootc and MicroShift for edge appliances, customers achieve:
 
 [cols="20,25,25,30", options="header"]
 |===
@@ -111,7 +111,7 @@ By adopting RHEL Image Mode and MicroShift for edge appliances, customers achiev
 
 [.text-left]
 **Q:** "How does this work with our existing container registries and CI/CD pipelines?" +
-**A:** RHEL Image Mode uses standard container registries (Quay.io, Artifact Registry, etc.) and integrates with existing CI/CD tools. You build bootc images just like any container image. +
+**A:** bootc uses standard container registries (Quay.io, Artifact Registry, etc.) and integrates with existing CI/CD tools. You build bootc images just like any container image. +
 *Show:* Module 2 demonstrates building images with standard tools.
 
 [.text-left]
@@ -131,7 +131,7 @@ By adopting RHEL Image Mode and MicroShift for edge appliances, customers achiev
 
 [.text-left]
 **Q:** "What happens if an update fails in production?" +
-**A:** RHEL Image Mode uses A/B boot—the new version is staged but doesn't activate until reboot. If something goes wrong, you roll back instantly to the previous working state. +
+**A:** bootc uses A/B boot—the new version is staged but doesn't activate until reboot. If something goes wrong, you roll back instantly to the previous working state. +
 *Show:* Module 4 demonstrates rollback capabilities.
 
 [.text-left]

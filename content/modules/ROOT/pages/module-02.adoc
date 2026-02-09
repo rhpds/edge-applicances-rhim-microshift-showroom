@@ -8,8 +8,8 @@
 By the end of this module, you will be able to:
 
 * [x] Read and explain a bootc Containerfile
-* [x] Understand why EUS (Extended Update Support) matters for long-lived appliances
-* [x] Explain why repo metadata (`redhat.repo`) must be embedded
+* [x] Understand why a stable stream baseline matters for long-lived appliances
+* [x] Explain why repo metadata (`centos.repo`) must be embedded
 * [x] Define physically-bound images and why they matter for edge
 * [x] Explain why embedded images live under `/usr` instead of `/var`
 * [x] Build a MicroShift-enabled base image
@@ -25,7 +25,7 @@ ManufacturingCo needs to deploy the same appliance to 50 factory sites — inclu
 
 [cols="1,2a", options="header"]
 |===
-| Traditional Method Pain Points | Image Mode Solution
+| Traditional Method Pain Points | bootc Solution
 | Pulling application images at runtime | **Physically-bound images:** Apps are inside the OS.
 | Constant registry access required | **True offline operation:** No registry dependency.
 | Manual package installs and config steps | **Deterministic deployments:** Every image is identical.
@@ -33,7 +33,7 @@ ManufacturingCo needs to deploy the same appliance to 50 factory sites — inclu
 |===
 
 === How Containerfiles Solve This Problem
-The `Containerfile` is the **Source of Truth** for the entire appliance. It transitions the workflow from fragile manual steps to a predictable automated pipeline.
+The `Containerfile` is the **single file** that defines the whole appliance. It replaces many manual steps with a predictable build process.
 
 [cols="1a,1a", options="header"]
 |===
@@ -46,105 +46,170 @@ The `Containerfile` is the **Source of Truth** for the entire appliance. It tran
 
 **What the Containerfile Defines:**
 
-* **Base OS:** The specific RHEL version (EUS).
+* **Base OS:** The specific CentOS Stream bootc base image.
 * **MicroShift:** The core orchestration and required packages.
 * **System Config:** Hardened firewall and security settings.
 * **Workloads:** Quadlets, manifests, and the logic to embed application images.
 
-=== Why We Use EUS (Extended Update Support)
-EUS is chosen because edge deployments value stability over speed:
+=== Why We Use a Stable Stream Baseline
+We choose a stable stream baseline because edge deployments value stability over rapid changes:
 
-* **Lifecycle Sync:** Hardened compatibility within the Red Hat Device Edge link:https://docs.redhat.com/en/documentation/red_hat_device_edge/4/html/overview/device-edge-overview#device-edge-compatibility_device-edge-overview[matrix^].
-* **Extended Support:** Up to 48 months of stability when paired with link:https://access.redhat.com/support/policy/updates/openshift#eust3[OpenShift/MicroShift EUS Term 3^].
+* **Lifecycle Sync:** Align compatibility with the upstream MicroShift matrix.
+* **Predictable Updates:** Stick to a tested CentOS Stream snapshot for long-lived appliances.
 * **Security without Friction:** Critical patches without minor version jumps.
 
 === View the Base Containerfile
 
-. View the base Containerfile:
+. View the Base CentOS 9 Containerfile:
 +
 [source,sh,role=execute]
 ----
-cat Containerfile.base
+cat Containerfile
 ----
 +
 [%collapsible]
 ====
-.Output of `$cat Containerfile.base`
+.Output of `$cat Containerfile`
 [source,dockerfile]
 ----
-FROM registry.redhat.io/rhel9-eus/rhel-9.6-bootc:9.6
-ARG VERSION_ID="9.6"
+FROM quay.io/centos-bootc/centos-bootc:stream9
 
-## Needed as bootc-image-builder requires a repo file to be present in the base image.
-ADD redhat.repo /etc/yum.repos.d/redhat.repo
+# --------------------------------------------------
+# Global speed optimizations
+# --------------------------------------------------
+RUN echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
 
-RUN dnf install -y --releasever="${VERSION_ID}" firewalld jq microshift microshift-release-info cockpit openscap-utils scap-security-guide && \
-    systemctl enable microshift && \
-    dnf clean all
+ARG ARCH=x86_64
+ENV MICROSHIFT_RPM_URL=https://github.com/microshift-io/microshift/releases/download/4.21.0_gbc8e20c07_4.21.0_okd_scos.ec.14/microshift-rpms-${ARCH}.tgz
 
-# Create a default 'redhat' user with the specified password.
-ARG USER_PASSWD
-RUN if [ -z "${USER_PASSWD}" ] ; then \
-        echo USER_PASSWD is a mandatory build argument && exit 1 ; \
-    fi
+# --------------------------------------------------
+# Repositories (NO dnf config-manager)
+# --------------------------------------------------
+RUN printf "[openshift-mirror-beta]\n\
+name=OpenShift Mirror Beta Repository\n\
+baseurl=https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rpms/4.21-el9-beta/\n\
+enabled=1\n\
+gpgcheck=0\n\
+skip_if_unavailable=1\n" \
+> /etc/yum.repos.d/openshift.repo
 
-RUN useradd -m -d /var/home/redhat -G wheel redhat && \
-    echo "redhat:${USER_PASSWD}" | chpasswd
+# --------------------------------------------------
+# Install ALL required tools in ONE go
+# --------------------------------------------------
+RUN dnf install -y \
+    curl \
+    tar \
+    createrepo_c \
+    jq \
+    skopeo \
+    firewalld \
+    containernetworking-plugins \
+    policycoreutils \
+ && dnf clean all
 
-# Mandatory firewall configuration
-RUN firewall-offline-cmd --zone=public --add-port=22/tcp && \
-    firewall-offline-cmd --zone=trusted --add-source=10.42.0.0/16 && \
-    firewall-offline-cmd --zone=trusted --add-source=169.254.169.1 && \
-    firewall-offline-cmd --zone=trusted --add-source=fd01::/48
+# --------------------------------------------------
+# Download MicroShift RPMs and build local repo
+# --------------------------------------------------
+RUN set -eux; \
+    mkdir -p /tmp/local-rpms; \
+    curl -L --fail --retry 5 "${MICROSHIFT_RPM_URL}" -o /tmp/microshift-rpms.tgz; \
+    tar -xzf /tmp/microshift-rpms.tgz -C /tmp/local-rpms; \
+    createrepo_c /tmp/local-rpms; \
+    printf "[microshift-local]\n\
+name=MicroShift Local\n\
+baseurl=file:///tmp/local-rpms\n\
+enabled=1\n\
+gpgcheck=0\n" > /etc/yum.repos.d/microshift-local.repo
 
-# Application-specific firewall configuration
-RUN firewall-offline-cmd --zone=public --add-port=80/tcp && \
-    firewall-offline-cmd --zone=public --add-port=443/tcp && \
-    firewall-offline-cmd --zone=public --add-port=30000-32767/tcp && \
-    firewall-offline-cmd --zone=public --add-port=30000-32767/udp
+# --------------------------------------------------
+# Install MicroShift stack (single DNF transaction)
+# --------------------------------------------------
+RUN dnf install -y --nogpgcheck \
+    microshift \
+    microshift-kindnet \
+    microshift-networking \
+    microshift-topolvm \
+    microshift-olm \
+    microshift-selinux \
+ && dnf clean all \
+ && rm -rf /tmp/local-rpms /tmp/microshift-rpms.tgz \
+ && rm -f /etc/yum.repos.d/microshift-local.repo
 
-# Systemd unit to ensure root filesystem is shared (required by OVN)
-RUN cat > /etc/systemd/system/microshift-make-rshared.service <<'EOF'
-[Unit]
-Description=Make root filesystem shared
-Before=microshift.service
-ConditionVirtualization=container
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/mount --make-rshared /
-[Install]
-WantedBy=multi-user.target
-EOF
+# --------------------------------------------------
+# Copy assets (grouped for cache efficiency)
+# --------------------------------------------------
+RUN mkdir -p /etc/cni/net.d \
+             /etc/microshift/manifests.d/001-test-app \
+             /usr/local/bin \
+             /usr/libexec/cni
 
-RUN systemctl enable microshift-make-rshared.service
-COPY wordpress /usr/lib/microshift/manifests.d/wordpress
+COPY assets/13-microshift-kindnet.conf /etc/crio/crio.conf.d/
+COPY assets/10-kindnet.conflist /etc/cni/net.d/
+COPY assets/99-offline.conf /etc/containers/registries.conf.d/
 
-## Apply kernel tuning for CIS hardening compliance
-RUN cat > /etc/sysctl.d/99-cis-hardening.conf <<'EOF'
-# IPv6 Settings
-net.ipv6.conf.all.accept_ra = 0
-net.ipv6.conf.all.accept_redirects = 0
-net.ipv6.conf.default.accept_ra = 0
-net.ipv6.conf.default.accept_redirects = 0
-# IPv4 Settings
-net.ipv4.conf.all.log_martians = 1
-net.ipv4.conf.all.rp_filter = 1
-net.ipv4.conf.all.secure_redirects = 0
-net.ipv4.conf.default.log_martians = 1
-net.ipv4.conf.default.secure_redirects = 0
-net.ipv4.ip_forward = 0
-# Ptrace Scope
-kernel.yama.ptrace_scope = 1
-EOF
-RUN echo "AllowUsers redhat" >> /etc/ssh/sshd_config
-# Run scan and hardening
-RUN oscap-im --profile xccdf_org.ssgproject.content_profile_cis /usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml
-----
+COPY scripts/setup.sh /usr/local/bin/setup-storage.sh
+COPY scripts/embed_image.sh /usr/local/bin/embed_image.sh
+COPY scripts/copy_embed.sh /usr/local/bin/copy_embed.sh
+
+COPY manifests/ /etc/microshift/manifests.d/001-test-app/
+COPY image-list.txt /tmp/image-list.txt
+
+COPY assets/fix-network.sh /usr/bin/fix-network.sh
+COPY assets/fix-network.service /etc/systemd/system/
+
+# --------------------------------------------------
+# Permissions + embedding (minimal restorecon)
+# --------------------------------------------------
+RUN chmod +x /usr/local/bin/*.sh /usr/bin/fix-network.sh && \
+    chmod 644 /etc/systemd/system/*.service || true
+
+RUN /usr/local/bin/embed_image.sh /tmp/image-list.txt
+
+RUN restorecon -v /usr/local/bin/* \
+               /usr/bin/fix-network.sh \
+               /etc/systemd/system/* \
+               /etc/microshift/manifests.d/001-test-app/*
+
+# --------------------------------------------------
+# Firewall + user + systemd units (combined)
+# --------------------------------------------------
+RUN firewall-offline-cmd --zone=public --add-port=22/tcp \
+ && firewall-offline-cmd --zone=public --add-port=80/tcp \
+ && firewall-offline-cmd --zone=public --add-port=443/tcp \
+ && firewall-offline-cmd --zone=public --add-port=6443/tcp \
+ && firewall-offline-cmd --zone=public --add-port=30000-32767/tcp \
+ && firewall-offline-cmd --zone=trusted --add-source=10.42.0.0/16 \
+ && firewall-offline-cmd --zone=trusted --add-source=169.254.169.1 \
+ && useradd -m -d /var/home/centos -G wheel centos \
+ && echo "centos:bootc" | chpasswd
+
+# --------------------------------------------------
+# Systemd services
+# --------------------------------------------------
+COPY scripts/microshift-embed.service /usr/lib/systemd/system/
+
+RUN printf "[Unit]\nDescription=Setup Storage\nBefore=microshift.service\n\n[Service]\nType=oneshot\nExecStart=/usr/local/bin/setup-storage.sh\nRemainAfterExit=yes\n\n[Install]\nWantedBy=multi-user.target\n" \
+    > /etc/systemd/system/microshift-storage-setup.service
+
+RUN printf "[Unit]\nDescription=Make root filesystem shared\nBefore=microshift.service\n\n[Service]\nType=oneshot\nExecStart=/usr/bin/mount --make-rshared /\n\n[Install]\nWantedBy=multi-user.target\n" \
+    > /usr/lib/systemd/system/microshift-make-rshared.service
+
+# --------------------------------------------------
+# Final cleanup + enable services
+# --------------------------------------------------
+RUN rm -rf /usr/lib/microshift/manifests/microshift-olm && \
+    systemctl enable \
+      firewalld \
+      microshift-make-rshared.service \
+      microshift-embed.service \
+      microshift-storage-setup.service \
+      fix-network.service \
+      microshift.service
 ====
 
 [NOTE]
 ====
-You do **not** need to modify `Containerfile.base` in this lab — it is provided so you understand what goes into your base appliance.
+You do **not** need to modify `Containerfile` in this lab — it is provided so you understand what goes into your base appliance.
 ====
 
 [#physically_bound]
@@ -153,7 +218,7 @@ You do **not** need to modify `Containerfile.base` in this lab — it is provide
 === Why `/usr` — Not `/var`?
 [cols="1,2a", options="header"]
 |===
-| Directory | Strategy in Image Mode
+| Directory | Strategy in bootc
 | `/usr` | **Immutable:** Versioned with the OS. Apps here upgrade/rollback with the kernel.
 | `/var` | **Mutable:** Runtime storage. Data here persists across OS updates.
 |===
@@ -162,10 +227,10 @@ You do **not** need to modify `Containerfile.base` in this lab — it is provide
 
 === How Physical Embedding Works
 
-The goal of physical embedding is to ensure MicroShift can run workloads without a registry.
+Physical embedding means the app images are stored inside the OS image, so MicroShift can run without pulling from a registry.
 
 * **Build time:** Use `skopeo` to copy container images into the immutable `/usr/lib` directory.
-* **Runtime:** Import these images into the Podman/CRI-O store automatically during boot.
+* **Runtime:** On boot, those images are imported into the local container store automatically.
 
 **Helper Scripts Provided:**
 
@@ -188,145 +253,39 @@ RUN skopeo copy --preserve-digests docker://${image} \
 
 Upstream reference patterns: link:https://gitlab.com/fedora/bootc/examples/-/tree/main/physically-bound-images[Fedora examples^].
 
-. View the `Containerfile` for the 4.19 appliance:
+
+== 2.3 Show: Build the Self-Contained Appliance (CentOS 9)
+We now embed a simple nginx web appliance to solve the **disconnected operations challenge**.
+
+
+. Build the bootc image with CentOS 9 as the base with embedded appliance (~10–15 minutes):
 +
 [source,sh,role=execute]
 ----
-cat Containerfile.4.19
+time sudo podman build -t microshift-offline:c9 .
 ----
+
+    This creates a container image containing:
+
+    - CentOS Stream 9 base OS
+    - MicroShift 4.21
+    - All required container images embedded
+    - Pre-configured services and networking
+
+. Generate Bootable QCOW2 Image
 +
-[%collapsible]
-====
-.Output of `$cat Containerfile.4.19`
-[source,dockerfile]
-----
-FROM localhost/microshift-bootc:base
-
-ARG USHIFT_BASE_IMAGE_NAME
-ARG USHIFT_BASE_IMAGE_TAG
-
-ENV IMAGE_STORAGE_DIR=/usr/lib/containers/storage
-ENV IMAGE_LIST_FILE=${IMAGE_STORAGE_DIR}/image-list.txt
-
-# use to embed application images
-COPY ./embed_image.sh /usr/bin/
-COPY ./copy_embedded_images.sh /usr/bin/
-
-# Pull images into /usr/lib/containers/storage
-RUN --mount=type=secret,id=pullsecret,dst=/run/secrets/pull-secret.json \
-    images="$(jq -r ".images[]" /usr/share/microshift/release/release-"$(uname -m)".json)" ; \
-    mkdir -p "${IMAGE_STORAGE_DIR}" ; \
-    for img in ${images} ; do \
-       /usr/bin/embed_image.sh ${img} --authfile /run/secrets/pull-secret.json ; \
-     done 
-
-# Embed Applications
-RUN --mount=type=secret,id=pullsecret,dst=/run/secrets/pull-secret.json <<PULL
-    /usr/bin/embed_image.sh docker.io/library/wordpress:6.2.1-apache
-    /usr/bin/embed_image.sh docker.io/library/mysql:8.0
-PULL
-
-RUN mkdir -p /etc/systemd/system/microshift.service.d
-RUN cat > /etc/systemd/system/microshift.service.d/microshift-copy-images.conf <<EOF
-[Service]
-ExecStartPre=/bin/bash /usr/bin/copy_embedded_images.sh
-EOF
-----
-====
-
-[#show_section]
-== 2.3 Show: Build the Base Image
-Building this consistent foundation solves **configuration drift**. 
-
-. (Optional) View the build script:
+Use bootc-image-builder to create a bootable disk image:
 +
 [source,sh,role=execute]
 ----
-cat build-base.sh
+time sudo podman run --rm -it --privileged \
+  -v $(pwd)/output:/output \
+  -v /var/lib/containers/storage:/var/lib/containers/storage \
+  quay.io/centos-bootc/bootc-image-builder:latest \
+  --type qcow2 localhost/microshift-offline:c9
 ----
 +
-[%collapsible]
-====
-.Build script: `build-base.sh` (abridged)
-[source,bash]
-----
-#!/bin/bash
-USER_PASSWD=redhat02
-IMAGE_NAME=microshift-bootc:base
-
-dnf config-manager \
-        --set-enabled rhocp-4.19-for-rhel-9-$(uname -m)-rpms \
-        --set-enabled fast-datapath-for-rhel-9-$(uname -m)-rpms
-dnf config-manager --set-disabled rhocp-4.18-for-rhel-9-$(uname -m)-rpms --set-disabled rhocp-4.20-for-rhel-9-$(uname -m)-rpms
-cp /etc/yum.repos.d/redhat.repo /home/lab-user/bootc-embedded-containers
-
-sudo podman build -t ${IMAGE_NAME} \
-    --build-arg USER_PASSWD=${USER_PASSWD} \
-    --volume /etc/rhsm:/etc/rhsm:ro,z \
-    --volume /etc/pki/entitlement:/etc/pki/entitlement:ro,z \
-    --volume /etc/yum.repos.d:/etc/yum.repos.d:ro,z \
-    -f Containerfile.base
-----
-====
-
-. Build the base image (~5 minutes):
-+
-[source,sh,role=execute]
-----
-time sudo bash -x build-base.sh 2>&1 | tee build-base.log
-----
-
-[#build_appliance]
-== 2.4 Show: Build the Self-Contained Appliance (4.19)
-We now embed WordPress and MySQL to solve the **disconnected operations challenge**.
-
-. (Optional) View the build script:
-+
-[source,sh,role=execute]
-----
-cat build.sh
-----
-+
-[%collapsible]
-====
-.Build script: `build.sh` (abridged)
-[source,bash]
-----
-#!/bin/bash
-set -e
-TAG=$1
-TAG_LOWER=$(echo "$TAG" | tr '[:upper:]' '[:lower:]')
-IMAGE_NAME=microshift-bootc-embedded
-BASE_IMAGE_NAME=microshift-bootc:base
-
-sudo podman build -t "${IMAGE_NAME}:${TAG}" \
-    --volume /etc/rhsm:/etc/rhsm:ro,z \
-    --volume /etc/pki/entitlement:/etc/pki/entitlement:ro,z \
-    --volume /etc/yum.repos.d:/etc/yum.repos.d:ro,z \
-    --build-arg USHIFT_BASE_IMAGE_NAME="${BASE_IMAGE_NAME}" \
-    --build-arg USHIFT_BASE_IMAGE_TAG=${TAG} \
-    -f Containerfile.${TAG}
-
-if [ "$TAG_LOWER" = "4.19" ]; then
-    sudo mkdir -p /var/tmp/bootc-images
-    sudo podman run --rm -it --privileged --security-opt label=type:unconfined_t \
-       -v /var/lib/containers/storage:/var/lib/containers/storage \
-       -v /var/tmp/bootc-images:/output \
-       --volume /etc/rhsm:/etc/rhsm:ro \
-       --volume /etc/pki/entitlement:/etc/pki/entitlement:ro \
-        registry.redhat.io/rhel9/bootc-image-builder:latest \
-        --progress=verbose --local --type iso localhost/${IMAGE_NAME}:${TAG}
-    cp -v /var/tmp/bootc-images/bootiso/install.iso microshift-bootc-embedded-4.19.iso
-fi
-----
-====
-
-. Build the 4.19 appliance (~10–15 minutes):
-+
-[source,sh,role=execute]
-----
-time sudo bash -x build.sh 4.19 2>&1 | tee build-4.19.log
-----
+This generates a QCOW2 disk image in `./output/qcow2/disk.qcow2` that can be booted directly.
 
 [#validation]
 == 2.5 Validation: Success Criteria
@@ -334,15 +293,15 @@ time sudo bash -x build.sh 4.19 2>&1 | tee build-4.19.log
 [cols="1,3", options="header"]
 |===
 | Component | Expected Status
-| **Base Image** | `microshift-bootc:base` exists in podman.
-| **Appliance Image** | `microshift-bootc-embedded:4.19` exists in podman.
-| **Bootable ISO** | `microshift-bootc-embedded-4.19.iso` is created and >5GB.
+| **Base Image** | `quay.io/centos-bootc/centos-bootc:stream9` exists in podman.
+| **Appliance Image** | `microshift-offline:c9` exists in podman.
+| **Bootable qcow2** | `microshift-workshop-4.21.qcow2` is created.
 |===
 
 [source,sh,role=execute]
 ----
-sudo podman images | grep microshift-bootc
-ls -lh microshift-bootc-embedded-4.19.iso
+sudo podman images | grep microshift
+ls -lh ./output/qcow2/disk.qcow2
 ----
 
 ---

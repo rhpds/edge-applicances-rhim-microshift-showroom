@@ -36,7 +36,8 @@ ManufacturingCo struggles with updates in the field. Traditional methods often f
 
 
 
-RHEL Image Mode replaces package updates with **atomic image deployment**. Each system maintains two bootable states:
+bootc replaces package updates with **atomic image deployment**. Think of it as two boot slots: one running now and one ready to switch to.
+Each system maintains two bootable states:
 
 [cols="1,1,2a", options="header"]
 |===
@@ -49,7 +50,7 @@ RHEL Image Mode replaces package updates with **atomic image deployment**. Each 
 **Business Value Comparison**
 [cols="1a,1a", options="header"]
 |===
-| ❌ Traditional Approach | ✅ Image Mode Approach
+| ❌ Traditional Approach | ✅ bootc Approach
 | 
 * Risky in-place mutation.
 * 15% failure rate + site visits.
@@ -62,10 +63,10 @@ RHEL Image Mode replaces package updates with **atomic image deployment**. Each 
 
 [#show_section]
 [#build_4.20]
-== 4.2 Show: Build the Updated Image (4.20)
+== 4.2 Show: Build the Updated Image (CentOS 10)
 
 === Why We're Doing This
-To demonstrate a **real update workflow**, we build version 4.20. In production, this would include security fixes, MicroShift payloads, or new app workloads.
+To demonstrate a **real update workflow**, we build version CentOS 10. In production, this would include a major OS version update, MicroShift payloads, or new app workloads.
 
 [NOTE]
 ====
@@ -73,123 +74,282 @@ Exit from the Bootc VM using Ctrl+D or ENTER "exit" in the terminal to exit the 
 ====
 
 === View the Updated Containerfile
-. Inspect the `Containerfile.4.20`:
+. Inspect the `Containerfile.c10`:
 +
 [source,sh,role=execute]
 ----
-cat Containerfile.4.20
+cat Containerfile.c10
 ----
 +
 [%collapsible]
 ====
-.Output of `$cat Containerfile.4.20`
+.Output of `$cat Containerfile.c10`
 [source,dockerfile]
 ----
-FROM localhost/microshift-bootc-embedded:4.19
-COPY ./embed_image.sh /usr/bin/
-## Needed as bootc-image-builder requires a repo file to be present in the base image.
-# in the build.sh with TAG=4.20, we replace the 4.19 repo with the 4.20 repo to allow upgrade MicroShift to 4.20. 
-ADD redhat.repo /etc/yum.repos.d/redhat.repo
-RUN dnf update --enablerepo=rhel-9-for-$(uname -m)-baseos-eus-rpms --enablerepo=rhel-9-for-x86_64-appstream-eus-rpms -y --releasever=9.6 && \
-    dnf clean all
-RUN > /usr/lib/containers/storage/image-list.txt
-# Pull the container images into /usr/lib/containers/storage:
-# - Each image goes into a separate sub-directory
-# - Sub-directories are named after the image reference string SHA
-# - An image list file maps image references to their name SHA
-# First for MicroShift payload
-RUN --mount=type=secret,id=pullsecret,dst=/run/secrets/pull-secret.json \
-    images="$(jq -r ".images[]" /usr/share/microshift/release/release-"$(uname -m)".json)" ; \
-    mkdir -p "${IMAGE_STORAGE_DIR}" ; \
-    for img in ${images} ; do \
-       /usr/bin/embed_image.sh ${img} --authfile /run/secrets/pull-secret.json ; \
-     done 
-RUN cat /usr/share/microshift/release/release-"$(uname -m)".json|jq .
-# Then for Applications
-RUN --mount=type=secret,id=pullsecret,dst=/run/secrets/pull-secret.json <<PULL
-    /usr/bin/embed_image.sh docker.io/library/wordpress:6.2.1-apache
-    /usr/bin/embed_image.sh docker.io/library/mysql:8.0
-PULL
+FROM quay.io/centos-bootc/centos-bootc:stream10
+
+# --------------------------------------------------
+# Global speed optimizations
+# --------------------------------------------------
+RUN echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
+ARG ARCH=x86_64
+ENV MICROSHIFT_RPM_URL=https://github.com/microshift-io/microshift/releases/download/4.21.0_gbc8e20c07_4.21.0_okd_scos.ec.14/microshift-rpms-${ARCH}.tgz
+
+# --------------------------------------------------
+# Repositories (NO dnf config-manager)
+# --------------------------------------------------
+RUN printf "[openshift-mirror-beta]\n\
+name=OpenShift Mirror Beta Repository\n\
+baseurl=https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rpms/4.21-el9-beta/\n\
+enabled=1\n\
+gpgcheck=0\n\
+skip_if_unavailable=1\n" \
+> /etc/yum.repos.d/openshift.repo
+
+# --------------------------------------------------
+# Install ALL required tools in ONE go
+# --------------------------------------------------
+RUN dnf install -y \
+    curl \
+    tar \
+    createrepo_c \
+    jq \
+    skopeo \
+    firewalld \
+    policycoreutils \
+ && dnf clean all
+
+# --------------------------------------------------
+# Manually install CNI plugins (Required for CentOS 10)
+# --------------------------------------------------
+ARG CNI_PLUGINS_VERSION=v1.6.2
+RUN set -eux; \
+    mkdir -p /usr/libexec/cni; \
+    curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_PLUGINS_VERSION}/cni-plugins-linux-amd64-${CNI_PLUGINS_VERSION}.tgz" -o /tmp/cni-plugins.tgz; \
+    tar -xzf /tmp/cni-plugins.tgz -C /usr/libexec/cni; \
+    rm -rf /tmp/cni-plugins.tgz
+
+# --------------------------------------------------
+# Download MicroShift RPMs and build local repo
+# --------------------------------------------------
+RUN set -eux; \
+    mkdir -p /tmp/local-rpms; \
+    curl -L --fail --retry 5 "${MICROSHIFT_RPM_URL}" -o /tmp/microshift-rpms.tgz; \
+    tar -xzf /tmp/microshift-rpms.tgz -C /tmp/local-rpms; \
+    createrepo_c /tmp/local-rpms; \
+    printf "[microshift-local]\n\
+name=MicroShift Local\n\
+baseurl=file:///tmp/local-rpms\n\
+enabled=1\n\
+gpgcheck=0\n" > /etc/yum.repos.d/microshift-local.repo
+
+# --------------------------------------------------
+# Install MicroShift stack (single DNF transaction)
+# --------------------------------------------------
+RUN dnf install -y --nogpgcheck \
+    microshift \
+    microshift-kindnet \
+    microshift-networking \
+    microshift-topolvm \
+    microshift-olm \
+    microshift-selinux \
+ && dnf clean all \
+ && rm -rf /tmp/local-rpms /tmp/microshift-rpms.tgz \
+ && rm -f /etc/yum.repos.d/microshift-local.repo
+
+# --------------------------------------------------
+# Copy assets
+# --------------------------------------------------
+RUN mkdir -p /etc/cni/net.d \
+             /etc/microshift/manifests.d/001-test-app \
+             /usr/local/bin
+
+COPY assets/13-microshift-kindnet.conf /etc/crio/crio.conf.d/
+COPY assets/10-kindnet.conflist /etc/cni/net.d/
+COPY assets/99-offline.conf /etc/containers/registries.conf.d/
+
+COPY scripts/setup.sh /usr/local/bin/setup-storage.sh
+COPY scripts/embed_image.sh /usr/local/bin/embed_image.sh
+COPY scripts/copy_embed.sh /usr/local/bin/copy_embed.sh
+
+COPY image-list.txt /tmp/image-list.txt
+COPY wordpress /usr/lib/microshift/manifests.d/wordpress
+COPY assets/fix-network.sh /usr/bin/fix-network.sh
+COPY assets/fix-network.service /etc/systemd/system/
+
+# --------------------------------------------------
+# Permissions + embedding (minimal restorecon)
+# --------------------------------------------------
+RUN chmod +x /usr/local/bin/*.sh /usr/bin/fix-network.sh && \
+    chmod 644 /etc/systemd/system/*.service || true
+
+RUN /usr/local/bin/embed_image.sh /tmp/image-list.txt
+
+RUN restorecon -R -v /usr/local/bin/ \
+                   /usr/bin/fix-network.sh \
+                   /etc/systemd/system/ \
+                   /etc/microshift/manifests.d/001-test-app/ \
+                   /usr/libexec/cni
+
+# --------------------------------------------------
+# Firewall + user
+# --------------------------------------------------
+RUN firewall-offline-cmd --zone=public --add-port=22/tcp \
+ && firewall-offline-cmd --zone=public --add-port=80/tcp \
+ && firewall-offline-cmd --zone=public --add-port=443/tcp \
+ && firewall-offline-cmd --zone=public --add-port=6443/tcp \
+ && firewall-offline-cmd --zone=public --add-port=30000-32767/tcp \
+ && firewall-offline-cmd --zone=trusted --add-source=10.42.0.0/16 \
+ && firewall-offline-cmd --zone=trusted --add-source=169.254.169.1 \
+ && useradd -m -d /var/home/centos -G wheel centos \
+ && echo "centos:bootc" | chpasswd
+
+# --------------------------------------------------
+# Systemd services
+# --------------------------------------------------
+COPY scripts/microshift-embed.service /usr/lib/systemd/system/
+
+RUN printf "[Unit]\nDescription=Setup Storage\nBefore=microshift.service\n\n\
+[Service]\nType=oneshot\nExecStart=/usr/local/bin/setup-storage.sh\nRemainAfterExit=yes\n\n\
+[Install]\nWantedBy=multi-user.target\n" \
+> /etc/systemd/system/microshift-storage-setup.service
+
+RUN cat > /usr/lib/systemd/system/microshift-make-rshared.service <<'EOF'
+[Unit]
+Description=Make root filesystem shared
+Before=microshift.service
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/mount --make-rshared /
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# --------------------------------------------------
+# Final cleanup + enable services
+# --------------------------------------------------
+RUN rm -rf /usr/lib/microshift/manifests/microshift-olm && \
+    systemctl enable \
+      firewalld \
+      microshift-make-rshared.service \
+      microshift-embed.service \
+      microshift-storage-setup.service \
+      fix-network.service \
+      microshift.service
 ----
 ====
 
-=== Build the 4.20 Image
-. Run the 4.20 build:
+=== Build the CentOS 10 Image
+. Run the CentOS 10 build:
 +
 [source,sh,role=execute]
 ----
-time sudo bash -x build.sh 4.20 2>&1 | tee build-4.20.log
+time sudo podman build -f Containerfile.c10 -t microshift-offline:c10
 ----
 
 [NOTE]
 ====
-**Image Size Reality Check**: Layering 4.20 on 4.19 increases size. In production, you may build **fresh images** instead. Both models work with `bootc switch`.
+**Image Size Reality Check**: Layering CentOS 10 on 9 increases size. In production, you may build **fresh images** instead. Both models work with `bootc switch`.
 ====
 
 [#upgrade]
-== 4.3 Show: Deploy Update Using Disconnected Workflow
+== 4.3 Show: Deploy Update Using Local Registry
 
 === Why We're Doing This
-We are simulating the **real edge**: no registry, no internet, and no onsite IT.
+We are simulating a **local registry workflow** for edge environments. This demonstrates how to use a local registry to distribute updates without requiring external internet access.
 
 [cols="^1,2,2", options="header"]
 |===
 | Step | Action | Command
-| 1 | **Export** | `skopeo copy ... dir:`
-| 2 | **Pack** | `tar -cvf`
-| 3 | **Transfer** | `scp`
-| 4 | **Switch** | `bootc switch --transport dir`
+| 1 | **Setup Registry** | Run `setup-local-registry.sh`
+| 2 | **Tag Image** | `podman tag`
+| 3 | **Push to Registry** | `podman push`
+| 4 | **Switch** | `bootc switch` with registry URL
 |===
 
-=== Export and Transfer the 4.20 Image
-. Export using `skopeo`:
+=== Setup Local Registry and Push Image
+
+. Setup the local registry:
 +
 [source,sh,role=execute]
 ----
-mkdir -p /var/tmp/microshift-bootc-4.20
-sudo skopeo copy containers-storage:localhost/microshift-bootc-embedded:4.20 dir:/var/tmp/microshift-bootc-4.20
+sudo bash setup-local-registry.sh
+----
++
+This script creates and starts a local container registry accessible at `registry.local:5000`.
+
+. Tag the image for the local registry:
++
+[source,sh,role=execute]
+----
+sudo podman tag localhost/microshift-offline:c10 registry.local:5000/microshift-offline:c10
 ----
 
-. Pack and Check Size (~11GB):
+. Push the image to the local registry:
 +
 [source,sh,role=execute]
 ----
-cd /var/tmp/
-time tar cvf microshift-bootc-4.20.tar microshift-bootc-4.20/
-du -sh /var/tmp/microshift-bootc-4.20.tar
+sudo podman push registry.local:5000/microshift-offline:c10
 ----
-
-. Copy to Appliance:
 +
-[source,sh,role=execute]
-----
-scp /var/tmp/microshift-bootc-4.20.tar redhat@<VM_IP_ADDRESS>:/var/tmp
-----
+This makes the CentOS 10 image available via the local registry for the VM to pull.
 
 === Switch and Activate on the Edge Node
-. SSH and Unpack:
+
+. SSH into the VM:
 +
 [source,sh,role=execute]
 ----
-ssh redhat@<VM_IP_ADDRESS>
-cd /var/tmp/ && time tar -xvf microshift-bootc-4.20.tar
+ssh centos@<VM_IP_ADDRESS>
 ----
++
+When prompted, enter the password: `bootc`
 
-. Perform the Switch and Reboot:
+. Perform the bootc switch to the registry image:
 +
 [source,sh,role=execute]
 ----
-sudo bootc switch --transport dir /var/tmp/microshift-bootc-4.20/
-sudo bootc status
-sudo bootc upgrade --apply
+sudo bootc switch registry.local:5000/microshift-offline:c10
 ----
 
-=== Verify Success
+. Check the bootc status:
++
 [source,sh,role=execute]
 ----
 sudo bootc status
+----
+
+. Reboot to apply changes:
++
+[source,sh,role=execute]
+----
+sudo reboot
+----
+
+. Re-connect and verify:
++
+[source,sh,role=execute]
+----
+ssh centos@<vm-ip>
+----
+
+. Verify the OS version:
++
+[source,sh,role=execute]
+----
+cat /etc/os-release
+----
+
+. Verify reversion:
++
+[source,sh,role=execute]
+----
+sudo bootc status
+----
++
+[source,sh,role=execute]
+----
 microshift version
-systemctl status greenboot-healthcheck.service
 ----
 
 [#rollback]
@@ -198,27 +358,47 @@ systemctl status greenboot-healthcheck.service
 === Why Rollback Matters
 Rollback provides an instant safety net with zero data loss and no need for field remediation.
 
-. **Check Availability & Perform Rollback**:
+. Check availability and perform rollback:
 +
 [source,sh,role=execute]
 ----
-sudo bootc status   # Should show 4.20 (booted) and 4.19 (rollback)
+sudo bootc status  
+----
++
+[source,sh,role=execute]
+----
 sudo bootc rollback
-sudo systemctl reboot
 ----
 
-. **Verify Reversion**:
 +
 [source,sh,role=execute]
 ----
-sudo bootc status   # 4.19 should now be booted
+sudo reboot
+----
+
+. Re-connect and Verify
++
+[source,sh,role=execute]
+----
+ssh centos@<vm-ip>
+----
+
+. Verify the OS version:
++
+[source,sh,role=execute]
+----
+cat /etc/os-release
+----
+
+. Verify reversion:
++
+[source,sh,role=execute]
+----
+sudo bootc status  
 microshift version
 ----
 
-[IMPORTANT]
-====
-Rollback preserves `/etc`, `/var`, and application data. Only the core OS is reverted.
-====
+
 
 [IMPORTANT]
 ====
@@ -226,16 +406,16 @@ Rollback preserves `/etc`, `/var`, and application data. Only the core OS is rev
 
 This demonstration shows the **bootc rollback capability** for the OS layer. However, **MicroShift data and state are not automatically restored** when performing a bootc rollback. This is a **design decision**, not a known issue.
 
-* **Restore data for older version:** If you need to restore MicroShift workloads, data, or configuration after an OS rollback, you can restore data for the older MicroShift version using MicroShift backup and restore procedures. See link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.20/html/backup_and_restore/backing-up-and-restoring-data#microshift-restoring-data-backups-manually_microshift-backup-and-restore[Red Hat build of MicroShift 4.20 Backup and Restore documentation^] for details.
-* **Downgrade limitations:** Downgrades other than automatic rollbacks are not supported. See link:https://docs.redhat.com/en/documentation/red_hat_build_of_microshift/4.20/html-single/updating/index#microshift-updates-rpm-ostree_microshift-update-rpms-ostree[Red Hat build of MicroShift 4.20 Updating documentation^] for details.
+* **Restore data for older version:** If you need to restore MicroShift workloads, data, or configuration after an OS rollback, use the upstream MicroShift backup and restore procedures for the older version.
+* **Downgrade limitations:** Downgrades other than automatic rollbacks are not supported. Follow the upstream MicroShift updating guidance for your version.
 ====
 
 [#validation]
 == 4.5 Validation: Update and Rollback Verified
-* [ ] 4.20 deployed successfully
+* [ ] CentOS 10 deployed successfully
 * [ ] Greenboot reports healthy
 * [ ] Pods continued running
-* [ ] Rolled back to 4.19 without onsite intervention
+* [ ] Rolled back to CentOS 9 without onsite intervention
 
 [#delta_updates]
 == 4.6 Know: Experimental: Delta Updates for Low-Bandwidth
@@ -243,7 +423,7 @@ Disconnected sites often have limited bandwidth. **Delta updates** reduce GB-siz
 
 [NOTE]
 ====
-Delta updates are **experimental today** (see link:https://issues.redhat.com/browse/RHELBU-3333[RHELBU-3333^]).
+Delta updates are **experimental today**.
 ====
 
 ---
