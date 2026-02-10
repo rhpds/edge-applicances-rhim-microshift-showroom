@@ -67,7 +67,7 @@ KVM is the Linux virtualization system used to run the VM. Kickstart is an autom
 +
 [source,sh,role=execute]
 ----
-cat setup-isolated-net.sh
+cat setup-isolate-net.sh
 ----
 +
 [%collapsible]
