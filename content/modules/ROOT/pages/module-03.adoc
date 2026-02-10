@@ -364,7 +364,7 @@ If you see **"Successfully pulled"**, the system used the internet. If you see *
 To see how MicroShift manages the embedded workloads:
 [source,sh,role=execute]
 ----
-ls /etc/microshift/manifests.d/001-test-app/
+ls /usr/lib/microshift/manifests.d/001-test-app/
 ----
 
 [source,sh,role=execute]
