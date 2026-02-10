@@ -352,6 +352,32 @@ sudo bootc status
 microshift version
 ----
 
+. Verify pods are starting and reaching `Running`:
++
+[source,sh,role=execute]
+----
+watch oc get pods -A
+----
++
+The pods will start up and show `Running` after a short time.
+
+. Verify the WordPress application deployed in the CentOS 10 image:
++
+[source,sh,role=execute]
+----
+oc get pods -n example-apps-wordpress
+oc get route
+----
+
+. Test the WordPress route:
++
+[source,sh,role=execute]
+----
+curl wordpress.apps.example.com
+----
+
+
+
 [#rollback]
 == 4.4 Show: Demonstrate Rollback Capability
 
