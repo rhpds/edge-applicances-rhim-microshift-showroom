@@ -265,6 +265,7 @@ We now embed a simple nginx web appliance to solve the **disconnected operations
 time sudo podman build -t microshift-offline:c9 .
 ----
 
+
     This creates a container image containing:
 
     - CentOS Stream 9 base OS

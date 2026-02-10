@@ -294,7 +294,7 @@ cat /etc/os-release
 +
 [source,sh,role=execute]
 ----
-sudo systemctl status microshift-embed
+watch -n 2 sudo systemctl status microshift-embed
 ----
 
 +
@@ -302,6 +302,10 @@ sudo systemctl status microshift-embed
 ====
 Take a look at the service status. It is importing images from `/usr` to container storage `/var`. The MicroShift service will start only after this service shows "Active".
 ====
+
+. Press CTRL+C to exit the watch once the service shows "Active".
+
+. Now check the MicroShift service:
 
 +
 [source,sh,role=execute]
