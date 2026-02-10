@@ -72,7 +72,7 @@ cat setup-isolated-net.sh
 +
 [%collapsible]
 ====
-.Output of `setup-isolated-net.sh`
+.Output of `setup-isolate-net.sh`
 [source,bash]
 ----
 #!/bin/bash
