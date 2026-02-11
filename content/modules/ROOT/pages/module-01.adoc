@@ -7,7 +7,9 @@
 == Learning objectives
 By the end of this module, you will be able to:
 
-* Identify key edge computing challenges and how RHEL Image Mode addresses them
+* Identify key edge computing challenges and how bootc addresses them
+* Explain what bootc is and how it delivers atomic, image-based updates
+* Understand MicroShift as a lightweight Kubernetes for edge devices
 * Explain the build → deploy → manage workflow for bootc-based appliances
 * Navigate the lab environment and recognize the key system components
 * Understand how physically-bound images support disconnected deployments
@@ -17,7 +19,7 @@ By the end of this module, you will be able to:
 == 1.1 Know: Understanding Edge Appliance Challenges
 
 === The Business Challenge
-Organizations deploying systems outside the data center face a shared reality: moving compute to where work happens introduces friction, operational risk, and inconsistency.
+Organizations running systems outside the data center face a shared reality: remote locations make systems harder to manage and keep consistent.
 
 [cols="1,3", options="header"]
 |===
@@ -28,7 +30,7 @@ Organizations deploying systems outside the data center face a shared reality: m
 |===
 
 === What is Edge Computing?
-Edge computing uses compute resources **outside** centralized infrastructure—in warehouses, factories, retail locations, hospitals, power grids, and beyond.
+Edge computing means running systems **outside** the data center—like warehouses, factories, retail sites, hospitals, and power grids.
 
 While the concept is decades old, today’s edge includes:
 
@@ -41,7 +43,7 @@ While the concept is decades old, today’s edge includes:
 This evolution increases capability—but also exposes limits of traditional OS deployment and lifecycle models.
 
 === The Constraints of Edge Environments
-Edge environments must contend with constraints that aren’t typical in data center or cloud deployments:
+Edge environments must deal with constraints that are uncommon in data centers or the cloud:
 
 [cols="1s,3", options="header"]
 |===
@@ -82,14 +84,60 @@ Inconsistent environments amplify the core challenges of appliance management:
 ====
 
 [#bootc_solution]
-== 1.2 Know: How RHEL Image Mode Addresses These Challenges
+== 1.2 Know: How bootc Addresses These Challenges
 
-RHEL Image Mode **treats the OS like a container image** using `bootc`. Instead of modifying a live filesystem, appliances update by replacing the system image entirely.
+bootc **treats the OS like a container image**. Instead of changing a live system, it replaces the system image during updates.
+
+[NOTE]
+====
+**Simple terms:** The OS is a single image. Updates swap the image, and rollback swaps back.
+====
+
+=== What is bootc?
+
+bootc is an image-based Linux system that uses container tooling (like Podman) to build, distribute, and update the entire operating system. Key concepts:
+
+* **Container-native OS:** The OS is built and shipped as an OCI container image
+* **A/B Boot Slots:** Two system partitions allow atomic switching between versions
+* **Immutable by default:** The base OS is read-only; changes go to `/etc` and `/var`
+* **Familiar tooling:** Use `Containerfile`, `podman build`, and container registries
+
+image::bootc-architecture.png[bootc with package mode,100%,100%]
+
+=== What is MicroShift?
+
+MicroShift is a lightweight Kubernetes distribution optimized for edge devices. It brings OpenShift APIs to resource-constrained environments.
+
+* **Small footprint:** Runs on devices with as little as 2 CPU cores and 2 GB RAM
+* **OpenShift APIs:** Compatible with OpenShift workloads and tooling
+* **Self-contained:** All components run as a single binary
+* **Edge-optimized:** Designed for disconnected, intermittent, or low-bandwidth networks
+
+image::microshift-architecture.png[MicroShift architecture,100%,100%]
+
+=== Lightweight Kubernetes Alternatives
+
+If you're familiar with other lightweight Kubernetes distributions, MicroShift fits in the same category:
+
+* **k3s** — Popular CNCF-certified lightweight Kubernetes from Rancher
+* **k0s** — Zero-dependency Kubernetes from Mirantis
+* **MicroK8s** — Snap-based lightweight Kubernetes from Canonical
+
+MicroShift is Red Hat's approach to this space, designed specifically for edge devices with OpenShift API compatibility.
+
+[NOTE]
+====
+**Why MicroShift for this workshop?**
+
+* Integrates natively with bootc and the RHEL ecosystem
+* OpenShift API compatibility means workloads move seamlessly between edge and data center
+* The patterns shown here (embedded images, atomic updates) apply to any lightweight Kubernetes
+====
 
 === Current State vs. Desired State
 [cols="1a,1a", options="header"]
 |===
-| ❌ Traditional State | ✅ Desired State (Image Mode)
+| ❌ Traditional State | ✅ Desired State (bootc)
 | 
 * Manual or scripted OS build/config
 * Drift grows with every patch
@@ -110,7 +158,7 @@ RHEL Image Mode **treats the OS like a container image** using `bootc`. Instead 
 === Technical Lifecycle Comparison
 [cols="1,2a,2a", options="header"]
 |===
-| Phase | Traditional Appliance | Image Mode (bootc)
+| Phase | Traditional Appliance | bootc
 
 | *Describe*
 | Manual requirements or scattered scripts.
@@ -130,12 +178,12 @@ RHEL Image Mode **treats the OS like a container image** using `bootc`. Instead 
 
 | *Update*
 | Incremental (drift-prone) patching.
-| Atomic "A/B" image swap + Reboot.
+| Atomic "A/B" image swap + Reboot (two slots: old and new).
 |===
 
 
 
-image::redhat-image-mode.jpg[RHEL Image Mode architecture diagram,100%,100%]
+image::redhat-image-mode.jpg[bootc architecture diagram,100%,100%]
 
 [NOTE]
 ====
@@ -156,22 +204,24 @@ All lab content has been pre-staged in your working directory.
 
 [source,sh,role=execute]
 ----
-cd ~/bootc-embedded-containers
+cd ~/airgapped-bootc-embedded
 ls -la
 ----
 
 [%collapsible]
 ====
 .Detailed File Overview
-* `Containerfile.base`, `Containerfile.4.19`, `Containerfile.4.20` – Image definitions.
-* `build-base.sh`, `build.sh` – Core appliance build scripts.
-* `embed_image.sh`, `copy_embedded_images.sh` – Tools to embed app images.
-* `create-vm.sh`, `setup-isolated-network.sh` – VM and Network provisioning.
-* `wordpress/` – Sample application manifests.
+* `Containerfile`, `Containerfile.c10` – Image definitions.
+* `assets/` – Appliance build scripts.
+* `scripts/` – Scripts to embed images into build.
+* `create-vm.sh`, `setup-isolated-network.sh` – VM and network provisioning.
+* `wordpress/`, `manifests/` – Sample application manifests.
+* `image-list.txt` – List of images required for MicroShift and appliances.
+
 ====
 
 [#validation]
-== 1.5 Validation: Environment Ready
+== 1.4 Validation: Environment Ready
 
 === Validate Your Environment
 . **Confirm Directory:**
@@ -181,20 +231,20 @@ ls -la
 pwd
 ----
 +
-Expected: `/home/lab-user/bootc-embedded-containers`
+Expected: `/home/lab-user/airgapped-bootc-embedded`
 
 . **Confirm Toolset:**
 +
 [source,sh,role=execute]
 ----
-which podman buildah skopeo
+which podman skopeo
 ----
 
 . **Confirm Source Files:**
 +
 [source,sh,role=execute]
 ----
-ls -la Containerfile.* build*.sh
+ls -la Containerfile.*
 ----
 
 [IMPORTANT]

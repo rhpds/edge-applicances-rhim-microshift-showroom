@@ -1,7 +1,7 @@
 ---
 site:
-  title: Building Self-contained Appliances with RHEL Image Mode and MicroShift
-  url: https://rhpds.github.io/edge-applicances-rhim-microshift-showroom
+  title: Building Self-contained Appliances with Bootc and MicroShift
+  # url: https://rhpds.github.io/edge-applicances-rhim-microshift-showroom
   start_page: modules::index.adoc
 
 content:
@@ -13,8 +13,8 @@ content:
 
 ui:
   bundle:
-    url: https://github.com/rhpds/rhdp_showroom_theme/releases/download/rh-one-2025/ui-bundle.zip
-    snapshot: true
+    url: ./ui-bundle-custom.zip
+    snapshot: false
   supplemental_files:
     - path: ./content/supplemental-ui
     - path: ./content/lib

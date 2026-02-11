@@ -1,12 +1,12 @@
 name: modules
-title: Building Self-contained Appliances with RHEL Image Mode and MicroShift
+title: Building Self-contained Appliances with Bootc and MicroShift
 version: master
 nav:
   - modules/ROOT/nav.adoc
 
 asciidoc:
   attributes:
-    lab_name: "Building Self-contained Appliances with Red Hat Image Mode (bootc) & MicroShift"
+    lab_name: "Building Self-contained Appliances with Bootc & MicroShift"
     release-version: master
     page-pagination: true
     my_var: "foo"
@@ -14,6 +14,3 @@ asciidoc:
     ssh_user: devops
     ssh_password: devops
     ssh_command: ssh someone@example.com
-    page-links:
-    - url: https://redhat.com
-      text: Red Hat
