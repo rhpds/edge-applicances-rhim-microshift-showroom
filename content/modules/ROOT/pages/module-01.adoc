@@ -183,7 +183,7 @@ MicroShift is Red Hat's approach to this space, designed specifically for edge d
 
 
 
-image::redhat-image-mode.jpg[bootc architecture diagram,100%,100%]
+image::redhat-image-mode.png[bootc architecture diagram,100%,100%]
 
 [NOTE]
 ====
