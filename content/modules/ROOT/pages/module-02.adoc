@@ -266,7 +266,7 @@ time sudo podman build -t microshift-offline:c9 .
 ----
 
 
-    This creates a container image containing:
+This creates a container image containing:
 
     - CentOS Stream 9 base OS
     - MicroShift 4.21

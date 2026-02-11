@@ -183,7 +183,7 @@ MicroShift is Red Hat's approach to this space, designed specifically for edge d
 
 
 
-image::redhat-image-mode.jpg[bootc architecture diagram,100%,100%]
+image::redhat-image-mode.png[bootc architecture diagram,100%,100%]
 
 [NOTE]
 ====
@@ -197,7 +197,7 @@ You will interact with 3 core systems:
 2. **Container Registry:** Hosts bootc images to demonstrate connected and on-demand updates.
 3. **Target Host VM:** Represents a remote edge appliance where the bootc image is installed.
 
-image::disconnected.jpg[disconnected-workflow,100%,100%]
+image::disconnected.png[disconnected-workflow,100%,100%]
 
 === Hands-On: Lab Files
 All lab content has been pre-staged in your working directory.
