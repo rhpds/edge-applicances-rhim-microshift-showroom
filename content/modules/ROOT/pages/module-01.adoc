@@ -117,22 +117,9 @@ image::microshift-architecture.png[MicroShift architecture,100%,100%]
 
 === Lightweight Kubernetes Alternatives
 
-If you're familiar with other lightweight Kubernetes distributions, MicroShift fits in the same category:
-
-* **k3s** — Popular CNCF-certified lightweight Kubernetes from Rancher
-* **k0s** — Zero-dependency Kubernetes from Mirantis
-* **MicroK8s** — Snap-based lightweight Kubernetes from Canonical
+If you're familiar with other lightweight Kubernetes distributions like k3s, MicroK8s, MicroShift fits in the same category:
 
 MicroShift is Red Hat's approach to this space, designed specifically for edge devices with OpenShift API compatibility.
-
-[NOTE]
-====
-**Why MicroShift for this workshop?**
-
-* Integrates natively with bootc and the RHEL ecosystem
-* OpenShift API compatibility means workloads move seamlessly between edge and data center
-* The patterns shown here (embedded images, atomic updates) apply to any lightweight Kubernetes
-====
 
 === Current State vs. Desired State
 [cols="1a,1a", options="header"]

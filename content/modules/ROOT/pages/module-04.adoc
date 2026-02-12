@@ -430,7 +430,7 @@ sudo bootc status
 +
 [source,sh,role=execute]
 ----
-microshift version
+oc get pods -A 
 ----
 
 [IMPORTANT]
@@ -451,12 +451,129 @@ This demonstration shows the **bootc rollback capability** for the OS layer. How
 * [ ] Rolled back to CentOS 9 without onsite intervention
 
 [#delta_updates]
-== 4.6 Know: Experimental: Delta Updates for Low-Bandwidth
-Disconnected sites often have limited bandwidth. **Delta updates** reduce GB-sized moves down to <500MB by only transferring what changed.
+== 4.6 Bonus: Delta Updates for Low-Bandwidth Environments
 
 [NOTE]
 ====
-Delta updates are **experimental today**.
+**This section is informational only** — we won't demonstrate delta updates live in this workshop. This is an experimental technique worth knowing about for future edge deployments.
+====
+
+=== Why Delta Updates Matter
+
+Look at our appliance image:
+
+[source,bash]
+----
+$ podman images
+REPOSITORY                               TAG    SIZE
+registry.local:5000/microshift-offline   c10    7.57 GB
+----
+
+This **7.57 GB image** is deployed at 50 factory sites. Now imagine a security patch that changes just 100MB of content. **Should you transfer 7.57 GB to every site, or just the 100MB that changed?**
+
+Delta updates solve this by transferring only what changed — like how your phone updates apps without re-downloading the entire app.
+
+=== The Challenge at Edge Sites
+
+[cols="1a,1a", options="header"]
+|===
+| ❌ Full Image Transfer | ✅ Delta Transfer
+| 
+* Transfer entire **7.57 GB** every time
+* **10+ hours** on slow factory links
+* Blocks network for factory operations
+* May fail on unreliable connections
+| 
+* Transfer only **~300-500 MB** of changes
+* **Minutes** instead of hours
+* Minimal network impact
+* More reliable on poor connections
+|===
+
+=== How It Works: A Simple Analogy
+
+Think of it like editing a document:
+
+1. **You have:** `microshift-offline:c9` (old image on edge device)
+2. **You want:** `microshift-offline:c10` (new image with updates)
+3. **Instead of:** Sending the entire 7.57 GB new image
+4. **You send:** Just the delta file (~300-500 MB)
+5. **Result:** Edge device reconstructs `c10` from `c9` + delta
+
+=== The Tools: tar-diff and tar-patch
+
+The link:https://github.com/containers/tar-diff[containers/tar-diff^] project provides two simple tools:
+
+[cols="1,2", options="header"]
+|===
+| Tool | What It Does
+| **`tar-diff`** | Compares two images → Creates a small delta file
+| **`tar-patch`** | Applies delta to old image → Reconstructs new image
+|===
+
+.Example: Creating and applying a delta for our appliance
+[source,bash]
+----
+# At your build server: export images as tar files
+podman save microshift-offline:c9 -o microshift-c9.tar
+podman save microshift-offline:c10 -o microshift-c10.tar
+
+# Generate delta between c9 and c10
+tar-diff microshift-c9.tar microshift-c10.tar update-c9-to-c10.tardiff
+
+# Check the delta size (much smaller than 7.57 GB!)
+ls -lh update-c9-to-c10.tardiff
+
+# Transfer only 'update-c9-to-c10.tardiff' to edge site
+
+# At edge site: apply delta to reconstruct c10
+tar-patch update-c9-to-c10.tardiff /path/to/c9-extracted/ microshift-c10.tar
+----
+
+=== Real-World Savings for Our Appliance
+
+For our **7.57 GB** `microshift-offline:c10` image with a typical update:
+
+[cols="1,1,1,1", options="header"]
+|===
+| | Full Image | Delta | Savings
+
+| **Transfer size**
+| 7.57 GB
+| ~400 MB
+| **95% smaller**
+
+| **Time @ 10 Mbps**
+| 1 hour 41 min
+| 5 minutes
+| **1.5 hours saved**
+
+| **Time @ 1 Mbps** (cellular)
+| 16+ hours
+| 53 minutes
+| **15+ hours saved**
+
+| **50 sites total**
+| 378 GB
+| 20 GB
+| **358 GB saved**
+|===
+
+=== When to Use Delta Updates
+
+[TIP]
+====
+Delta updates are ideal for:
+
+* **Cellular/satellite sites** — Where every MB costs money
+* **Shared bandwidth** — Don't disrupt factory operations
+* **Frequent patches** — Security updates become practical
+* **Unreliable links** — Smaller transfers = higher success rate
+====
+
+[NOTE]
+====
+Delta updates are **experimental today** but represent a promising approach for bandwidth-constrained edge deployments. The patterns work with any OCI-compatible image.
 ====
 
 ---
