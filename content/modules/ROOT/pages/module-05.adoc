@@ -90,11 +90,11 @@ You have successfully validated:
 
 This hands-on lab was created by:
 
-image::Arthur.jpg[Arthur Ricardo de Oliveira,47%,47%]
-* **Arthur Ricardo de Oliveira** - Senior Partner Technical Account Manager (PTAM)
-
 image::Hrushabh.jpg[Hrushabh Sirsulwar,35%,35%]
 * **Hrushabh Sirsulwar** - Partner Technical Account Manager (PTAM)
+
+image::Arthur.jpg[Arthur Ricardo de Oliveira,47%,47%]
+* **Arthur Ricardo de Oliveira** - Senior Partner Technical Account Manager (PTAM)
 
 **Last Updated:** Friday, January 16, 2026
 **Workshop Version:** v1
