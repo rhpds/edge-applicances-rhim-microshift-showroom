@@ -29,7 +29,7 @@ ManufacturingCo needs to deploy the same appliance to 50 factory sites — inclu
 | Pulling application images at runtime | **Physically-bound images:** Apps are inside the OS.
 | Constant registry access required | **True offline operation:** No registry dependency.
 | Manual package installs and config steps | **Deterministic deployments:** Every image is identical.
-| Multi-stage deployment complexity | **Single artifact delivery:** One ISO deploys the full system.
+| Multi-stage deployment complexity | **Single artifact delivery:** One disk image deploys the full system.
 |===
 
 === How Containerfiles Solve This Problem
@@ -310,6 +310,21 @@ However, `bootc-image-builder` supports multiple output formats for different de
 |===
 
 Choose the format that matches your target infrastructure. The appliance image stays the same—only the output format changes.
+====
+
+[TIP]
+.Production Recommendation: ISO with Kickstart
+====
+For **production deployments**, ISO is typically the preferred format because:
+
+* **Platform-independent:** Works on any hardware—bare metal, VMs, or edge devices—without hypervisor-specific drivers.
+* **Zero-touch deployment:** Attach a **Kickstart** file to automate the entire installation process with no manual intervention.
+* **Portable delivery:** Ship via USB drives, PXE boot servers, or any standard installation workflow.
+* **Universal compatibility:** No dependency on specific virtualization platforms or cloud providers.
+
+To generate an ISO instead of QCOW2, simply change `--type qcow2` to `--type iso` in the `bootc-image-builder` command.
+
+The Kickstart file uses the `ostreecontainer` directive to pull the OS directly from the embedded OCI archive on the ISO—enabling fully offline, automated installations at remote sites.
 ====
 
 [#validation]

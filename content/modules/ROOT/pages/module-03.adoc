@@ -28,21 +28,21 @@ ManufacturingCo must deploy appliances to 50 factory locations with varying cons
 | **Limited On-site IT** | The installation process must be "Zero Touch" and automated.
 |===
 
-**The Solution:** ISO-based deployment provides a single, portable file that contains the entire OS, MicroShift, and application stack.
+**The Solution:** QCOW2-based deployment provides a single, portable disk image that contains the entire OS, MicroShift, and application stack—ready to boot immediately.
 
-=== ISO-Based Deployment vs. Traditional Methods
+=== QCOW2 Deployment vs. Traditional Methods
 
 [cols="1a,1a", options="header"]
 |===
-| ❌ Traditional Network-Dependent | ✅ bootc ISO (Disconnected)
+| ❌ Traditional Network-Dependent | ✅ bootc QCOW2 (Disconnected)
 | 
 * Requires internet to pull packages/images.
 * Fragile: Installation fails if network drops.
 * Configuration drift across different sites.
 | 
-* **Self-Contained:** Everything is inside the ISO.
-* **Resilient:** Works via USB or local PXE boot.
-* **Atomic:** Identical installation at every site.
+* **Self-Contained:** Everything is inside the disk image.
+* **Instant Boot:** No installation required—just attach and boot.
+* **Atomic:** Identical deployment at every site.
 |===
 
 [#show_section]
@@ -50,16 +50,16 @@ ManufacturingCo must deploy appliances to 50 factory locations with varying cons
 == 3.2 Show: Deploy the Appliance to Target System
 
 === The Deployment Workflow
-We are simulating an **offline factory** by creating an isolated virtual network before installing the ISO.
+We are simulating an **offline factory** by creating an isolated virtual network before booting the QCOW2 disk image.
 
-KVM is the Linux virtualization system used to run the VM. Kickstart is an automated installer file.
+KVM is the Linux virtualization system used to run the VM. The QCOW2 image boots directly—no installation step required.
 
 [cols="^1,2,2", options="header"]
 |===
 | Step | Action | Purpose
 | 1 | **Isolate Network** | Simulate a factory with no internet access.
-| 2 | **Define VM** | Prepare the target hardware (simulated via KVM).
-| 3 | **Automate Install** | Use Kickstart to install the image with zero manual clicks.
+| 2 | **Prepare Disk** | Resize and position the QCOW2 image for the VM.
+| 3 | **Boot VM** | Import the disk and boot instantly—zero installation steps.
 |===
 
 === 1. Create Isolated Network
@@ -235,9 +235,9 @@ sudo virt-install \
 ----
 
 [TIP]
-.Architecture Insight: Kickstart & bootc
+.Architecture Insight: QCOW2 & bootc
 ====
-The Kickstart file uses the `ostreecontainer` command to tell the installer to pull the OS directly from the local OCI archive embedded on the ISO, rather than a remote registry.
+The QCOW2 disk image is a pre-installed, ready-to-boot appliance. Unlike ISO-based workflows that require an installation step, QCOW2 images boot directly into the running system—making deployment faster and eliminating installation failures.
 ====
 
 === 3. Verify VM Status
