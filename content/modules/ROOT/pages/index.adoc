@@ -8,7 +8,7 @@ This lab takes the next step: **building a working appliance** that handles comm
 [#problem]
 == The challenge: Edge appliances are hard to operate at scale
 
-Consider ManufacturingCo, which operates 50 factory locations across the World, each running critical edge appliances that control production lines and quality monitoring systems. These appliances must operate reliably in harsh industrial environments, function in disconnected or bandwidth-constrained networks, support cloud-native applications, update safely without disrupting production, and maintain consistency across all locations.
+Consider ManufacturingCo, which operates 50 factory locations across India, each running critical edge appliances that control production lines and quality monitoring systems. These appliances must operate reliably in harsh industrial environments, function in disconnected or bandwidth-constrained networks, support cloud-native applications, update safely without disrupting production, and maintain consistency across all locations.
 
 === The Reality
 
